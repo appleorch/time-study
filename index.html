@@ -1,0 +1,3535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
+
+<meta name="theme-color" content="#121212">
+
+<title>Time Study</title>
+
+<style>
+
+:root {
+    --bg:#121212;
+    --panel:#1e1e1e;
+    --panel2:#252525;
+    --text:#ffffff;
+    --muted:#aaaaaa;
+    --border:#444444;
+    --header:#2d2d2d;
+    --button:#3a3a3a;
+    --button-hover:#555555;
+    --input:#252525;
+    --accent:#0a84ff;
+    --green:#2ecc71;
+    --yellow:#ffc107;
+    --red:#dc3545;
+}
+
+body.light {
+    --bg:#f4f4f4;
+    --panel:#ffffff;
+    --panel2:#f3f3f3;
+    --text:#111111;
+    --muted:#666666;
+    --border:#cccccc;
+    --header:#e9e9e9;
+    --button:#dddddd;
+    --button-hover:#c8c8c8;
+    --input:#ffffff;
+}
+
+* {
+    box-sizing:border-box;
+}
+
+body {
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+
+    padding:
+        max(16px,env(safe-area-inset-top))
+        16px
+        max(16px,env(safe-area-inset-bottom));
+
+    text-align:center;
+
+    transition:
+        background .2s ease,
+        color .2s ease;
+}
+
+.container {
+    max-width:1150px;
+    margin:auto;
+
+    background:var(--panel);
+
+    padding:25px;
+
+    border-radius:14px;
+
+    box-shadow:
+        0 0 15px
+        rgba(0,0,0,.35);
+}
+
+h1 {
+    margin-top:0;
+    margin-bottom:25px;
+}
+
+
+/* =====================================================
+   STUDY INFORMATION
+===================================================== */
+
+.study-info {
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:15px;
+
+    max-width:850px;
+
+    margin:
+        0 auto 25px auto;
+
+    text-align:left;
+}
+
+.form-group {
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+.form-group label {
+    font-weight:bold;
+    font-size:14px;
+}
+
+input,
+textarea {
+    width:100%;
+
+    padding:11px;
+
+    font-size:16px;
+
+    background:var(--input);
+    color:var(--text);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:7px;
+
+    outline:none;
+}
+
+input:focus,
+textarea:focus {
+    border-color:var(--accent);
+}
+
+
+/* =====================================================
+   STATUS + TIMER
+===================================================== */
+
+#status {
+    color:var(--muted);
+
+    font-size:14px;
+    font-weight:bold;
+
+    letter-spacing:1px;
+
+    margin-top:15px;
+}
+
+#timer {
+    font-size:
+        clamp(44px,9vw,72px);
+
+    font-weight:bold;
+
+    font-variant-numeric:
+        tabular-nums;
+
+    margin:
+        8px 0 20px 0;
+}
+
+
+/* =====================================================
+   BUTTONS
+===================================================== */
+
+.controls,
+.file-controls {
+    display:flex;
+    flex-wrap:wrap;
+
+    justify-content:center;
+
+    gap:8px;
+}
+
+.file-controls {
+    margin-top:12px;
+}
+
+button {
+    min-height:46px;
+
+    padding:
+        10px 18px;
+
+    font-size:15px;
+    font-weight:bold;
+
+    background:var(--button);
+    color:var(--text);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:8px;
+
+    cursor:pointer;
+}
+
+button:hover {
+    background:var(--button-hover);
+}
+
+.start-button {
+    border-color:var(--green);
+}
+
+.lap-button {
+    background:var(--accent);
+    color:white;
+
+    min-width:120px;
+
+    font-size:18px;
+}
+
+.stop-button {
+    border-color:var(--red);
+}
+
+.import-button {
+    border-color:var(--accent);
+}
+
+
+/* =====================================================
+   LAP DASHBOARD
+===================================================== */
+
+.lap-dashboard {
+    display:grid;
+
+    grid-template-columns:
+        repeat(3,1fr);
+
+    gap:12px;
+
+    margin:
+        25px 0 10px 0;
+}
+
+.metric-card {
+    background:var(--panel2);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:10px;
+
+    padding:15px;
+}
+
+.metric-label {
+    color:var(--muted);
+
+    font-size:13px;
+    font-weight:bold;
+
+    text-transform:uppercase;
+
+    letter-spacing:.6px;
+}
+
+.metric-value {
+    margin-top:7px;
+
+    font-size:28px;
+    font-weight:bold;
+
+    font-variant-numeric:
+        tabular-nums;
+}
+
+.current-running {
+    color:var(--green);
+}
+
+.current-paused {
+    color:var(--yellow);
+}
+
+.current-stopped {
+    color:var(--muted);
+}
+
+
+/* =====================================================
+   IMPORT MESSAGE
+===================================================== */
+
+#importMessage {
+    display:none;
+
+    max-width:700px;
+
+    margin:
+        15px auto 0 auto;
+
+    padding:10px;
+
+    border-radius:8px;
+
+    font-size:14px;
+    font-weight:bold;
+}
+
+.import-success {
+    display:block !important;
+
+    color:var(--green);
+
+    border:
+        1px solid
+        var(--green);
+}
+
+.import-error {
+    display:block !important;
+
+    color:#ff7777;
+
+    border:
+        1px solid
+        var(--red);
+}
+
+
+/* =====================================================
+   LAP TABLE
+===================================================== */
+
+.table-wrapper {
+    overflow-x:auto;
+
+    margin-top:20px;
+}
+
+table {
+    width:100%;
+
+    border-collapse:collapse;
+
+    min-width:900px;
+}
+
+th,
+td {
+    border:
+        1px solid
+        var(--border);
+
+    padding:10px;
+
+    vertical-align:middle;
+}
+
+th {
+    background:var(--header);
+}
+
+tbody tr:nth-child(even) {
+    background:
+        rgba(128,128,128,.05);
+}
+
+/*
+    Highlight newest lap, which is now
+    displayed as the first row.
+*/
+
+tbody tr:first-child {
+    background:
+        rgba(10,132,255,.10);
+}
+
+.lap-time-input {
+    width:110px;
+
+    text-align:center;
+
+    padding:7px;
+}
+
+.notes-input {
+    min-width:200px;
+
+    min-height:40px;
+
+    resize:vertical;
+
+    padding:8px;
+
+    font-family:Arial,sans-serif;
+}
+
+.row-actions {
+    white-space:nowrap;
+}
+
+.row-actions button {
+    min-height:34px;
+
+    padding:
+        5px 9px;
+
+    margin:2px;
+
+    font-size:12px;
+}
+
+.insert-button {
+    color:var(--green);
+}
+
+.delete-button {
+    color:#ff6b6b;
+}
+
+.summary {
+    margin-top:18px;
+
+    font-weight:bold;
+}
+
+.hotkey-note,
+.offline-note {
+    color:var(--muted);
+
+    font-size:12px;
+
+    margin-top:12px;
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media(max-width:700px) {
+
+    .study-info {
+        grid-template-columns:1fr;
+    }
+
+    .lap-dashboard {
+        grid-template-columns:1fr;
+    }
+
+    .container {
+        padding:14px;
+    }
+
+    button {
+        padding:
+            10px 13px;
+    }
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+<h1>Time Study</h1>
+
+
+<!-- ==================================================
+     STUDY INFORMATION
+================================================== -->
+
+<div class="study-info">
+
+    <div class="form-group">
+
+        <label for="studyName">
+            Study Name
+        </label>
+
+        <input
+            id="studyName"
+            type="text"
+            placeholder="P441 Setup Study"
+        >
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label for="machine">
+            Machine
+        </label>
+
+        <input
+            id="machine"
+            type="text"
+            placeholder="P441"
+        >
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label for="partNumber">
+            Part Number
+        </label>
+
+        <input
+            id="partNumber"
+            type="text"
+            placeholder="123456"
+        >
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label for="operator">
+            Operator
+        </label>
+
+        <input
+            id="operator"
+            type="text"
+            placeholder="Operator Name"
+        >
+
+    </div>
+
+</div>
+
+
+<!-- ==================================================
+     TIMER
+================================================== -->
+
+<div id="status">
+    READY
+</div>
+
+<div id="timer">
+    00:00:00.000
+</div>
+
+
+<!-- ==================================================
+     TIMER CONTROLS
+================================================== -->
+
+<div class="controls">
+
+    <button
+        class="start-button"
+        onclick="startTimer()"
+    >
+        Start
+    </button>
+
+
+    <button
+        class="lap-button"
+        onclick="recordLap()"
+    >
+        Lap
+    </button>
+
+
+    <button onclick="pauseTimer()">
+        Pause
+    </button>
+
+
+    <button onclick="resumeTimer()">
+        Resume
+    </button>
+
+
+    <button
+        class="stop-button"
+        onclick="stopTimer()"
+    >
+        Stop
+    </button>
+
+
+    <button onclick="resetTimer()">
+        Reset
+    </button>
+
+</div>
+
+
+<!-- ==================================================
+     FILE CONTROLS
+================================================== -->
+
+<div class="file-controls">
+
+    <button
+        class="import-button"
+        onclick="openTXTImport()"
+    >
+        Import TXT
+    </button>
+
+
+    <button onclick="exportTXT()">
+        Export TXT
+    </button>
+
+
+    <button onclick="exportExcel()">
+        Export Excel
+    </button>
+
+
+    <button onclick="toggleTheme()">
+        Toggle Theme
+    </button>
+
+</div>
+
+
+<input
+    id="txtFileInput"
+    type="file"
+    accept=".txt,text/plain"
+    style="display:none;"
+    onchange="importTXTFile(event)"
+>
+
+
+<div id="importMessage"></div>
+
+
+<div class="hotkey-note">
+    Spacebar = Lap when you are not typing in a field
+</div>
+
+
+<!-- ==================================================
+     LAP DASHBOARD
+================================================== -->
+
+<div class="lap-dashboard">
+
+
+    <div class="metric-card">
+
+        <div class="metric-label">
+            Latest Lap
+        </div>
+
+        <div
+            id="latestLap"
+            class="metric-value"
+        >
+            ---.---
+        </div>
+
+    </div>
+
+
+    <div class="metric-card">
+
+        <div class="metric-label">
+            Current Lap
+        </div>
+
+        <div
+            id="currentLap"
+            class="
+                metric-value
+                current-stopped
+            "
+        >
+            ---.---
+        </div>
+
+        <div
+            id="currentLapStatus"
+            class="metric-label"
+            style="margin-top:5px;"
+        >
+            NOT RUNNING
+        </div>
+
+    </div>
+
+
+    <div class="metric-card">
+
+        <div class="metric-label">
+            Running Average
+        </div>
+
+        <div
+            id="averageLap"
+            class="metric-value"
+        >
+            ---.---
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ==================================================
+     LAP TABLE
+================================================== -->
+
+<div class="table-wrapper">
+
+<table>
+
+<thead>
+
+<tr>
+
+    <th>
+        Lap #
+    </th>
+
+    <th>
+        Lap Time (sec)
+    </th>
+
+    <th>
+        Cumulative (sec)
+    </th>
+
+    <th>
+        Notes
+    </th>
+
+    <th>
+        Actions
+    </th>
+
+</tr>
+
+</thead>
+
+
+<tbody id="lapTable">
+</tbody>
+
+</table>
+
+</div>
+
+
+<div
+    id="summary"
+    class="summary"
+>
+    Total Laps: 0
+</div>
+
+
+<div class="offline-note">
+    Newest completed lap is shown at the top. All timing, notes, editing, importing and exporting run locally in your browser.
+</div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   TIMER STATE
+========================================================= */
+
+let startTime = 0;
+
+let elapsedTime = 0;
+
+let running = false;
+
+let paused = false;
+
+let stopped = false;
+
+let studyStarted = false;
+
+let timerInterval = null;
+
+let laps = [];
+
+let lastLapTimestamp = 0;
+
+
+/* =========================================================
+   GENERAL HELPERS
+========================================================= */
+
+function $(id) {
+
+    return document.getElementById(id);
+}
+
+
+function fieldValue(id) {
+
+    return $(id)
+        .value
+        .trim();
+}
+
+
+function getStudyName() {
+
+    return (
+        fieldValue("studyName")
+        ||
+        "TimeStudy"
+    );
+}
+
+
+/* =========================================================
+   TIMER
+========================================================= */
+
+function getCurrentTime() {
+
+    if (running) {
+
+        return (
+            elapsedTime
+            +
+            (
+                performance.now()
+                -
+                startTime
+            )
+        );
+    }
+
+
+    return elapsedTime;
+}
+
+
+/* =========================================================
+   TIMER DISPLAY
+========================================================= */
+
+function updateTimerDisplay() {
+
+    const current =
+        getCurrentTime();
+
+
+    const hours =
+        Math.floor(
+            current
+            /
+            3600000
+        );
+
+
+    const minutes =
+        Math.floor(
+            (
+                current
+                %
+                3600000
+            )
+            /
+            60000
+        );
+
+
+    const seconds =
+        Math.floor(
+            (
+                current
+                %
+                60000
+            )
+            /
+            1000
+        );
+
+
+    const milliseconds =
+        Math.floor(
+            current
+            %
+            1000
+        );
+
+
+    $("timer").textContent =
+
+        String(hours)
+        .padStart(2,"0")
+
+        + ":"
+
+        + String(minutes)
+        .padStart(2,"0")
+
+        + ":"
+
+        + String(seconds)
+        .padStart(2,"0")
+
+        + "."
+
+        + String(milliseconds)
+        .padStart(3,"0");
+
+
+    updateCurrentLapDisplay();
+}
+
+
+/* =========================================================
+   CURRENT LAP
+========================================================= */
+
+function getCurrentLapSeconds() {
+
+    if (
+        !studyStarted
+        ||
+        stopped
+    ) {
+
+        return 0;
+    }
+
+
+    const totalSeconds =
+        getCurrentTime()
+        /
+        1000;
+
+
+    return Math.max(
+
+        0,
+
+        totalSeconds
+        -
+        lastLapTimestamp
+    );
+}
+
+
+function updateCurrentLapDisplay() {
+
+    const display =
+        $("currentLap");
+
+
+    const status =
+        $("currentLapStatus");
+
+
+    display.classList.remove(
+
+        "current-running",
+        "current-paused",
+        "current-stopped"
+    );
+
+
+    if (running) {
+
+        display.textContent =
+            getCurrentLapSeconds()
+            .toFixed(3);
+
+
+        display.classList.add(
+            "current-running"
+        );
+
+
+        status.textContent =
+            "RUNNING";
+    }
+
+    else if (paused) {
+
+        display.textContent =
+            getCurrentLapSeconds()
+            .toFixed(3);
+
+
+        display.classList.add(
+            "current-paused"
+        );
+
+
+        status.textContent =
+            "PAUSED";
+    }
+
+    else {
+
+        display.textContent =
+            "---.---";
+
+
+        display.classList.add(
+            "current-stopped"
+        );
+
+
+        status.textContent =
+            "NOT RUNNING";
+    }
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+function startTimer() {
+
+    if (
+        running
+        ||
+        stopped
+        ||
+        studyStarted
+    ) {
+
+        return;
+    }
+
+
+    startTime =
+        performance.now();
+
+
+    running = true;
+
+    paused = false;
+
+    studyStarted = true;
+
+
+    timerInterval =
+        setInterval(
+            updateTimerDisplay,
+            10
+        );
+
+
+    $("status").textContent =
+        "RUNNING";
+
+
+    updateTimerDisplay();
+}
+
+
+/* =========================================================
+   PAUSE
+========================================================= */
+
+function pauseTimer() {
+
+    if (!running) {
+
+        return;
+    }
+
+
+    elapsedTime +=
+        performance.now()
+        -
+        startTime;
+
+
+    running = false;
+
+    paused = true;
+
+
+    clearInterval(
+        timerInterval
+    );
+
+
+    timerInterval = null;
+
+
+    $("status").textContent =
+        "PAUSED";
+
+
+    updateTimerDisplay();
+}
+
+
+/* =========================================================
+   RESUME
+========================================================= */
+
+function resumeTimer() {
+
+    if (
+        !paused
+        ||
+        stopped
+    ) {
+
+        return;
+    }
+
+
+    startTime =
+        performance.now();
+
+
+    running = true;
+
+    paused = false;
+
+
+    timerInterval =
+        setInterval(
+            updateTimerDisplay,
+            10
+        );
+
+
+    $("status").textContent =
+        "RUNNING";
+
+
+    updateTimerDisplay();
+}
+
+
+/* =========================================================
+   STOP
+========================================================= */
+
+function stopTimer() {
+
+    if (
+        !studyStarted
+        ||
+        stopped
+    ) {
+
+        return;
+    }
+
+
+    if (running) {
+
+        elapsedTime +=
+            performance.now()
+            -
+            startTime;
+    }
+
+
+    running = false;
+
+    paused = false;
+
+    stopped = true;
+
+
+    clearInterval(
+        timerInterval
+    );
+
+
+    timerInterval = null;
+
+
+    $("status").textContent =
+        "STOPPED";
+
+
+    updateTimerDisplay();
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+function resetTimer() {
+
+    clearInterval(
+        timerInterval
+    );
+
+
+    timerInterval = null;
+
+
+    startTime = 0;
+
+    elapsedTime = 0;
+
+    running = false;
+
+    paused = false;
+
+    stopped = false;
+
+    studyStarted = false;
+
+
+    laps = [];
+
+    lastLapTimestamp = 0;
+
+
+    $("lapTable").innerHTML =
+        "";
+
+
+    $("latestLap").textContent =
+        "---.---";
+
+
+    $("averageLap").textContent =
+        "---.---";
+
+
+    $("summary").textContent =
+        "Total Laps: 0";
+
+
+    $("status").textContent =
+        "READY";
+
+
+    clearImportMessage();
+
+
+    updateTimerDisplay();
+}
+
+
+/* =========================================================
+   RECORD LAP
+========================================================= */
+
+function recordLap() {
+
+    if (!running) {
+
+        return;
+    }
+
+
+    const totalSeconds =
+        getCurrentTime()
+        /
+        1000;
+
+
+    const lapTime =
+        totalSeconds
+        -
+        lastLapTimestamp;
+
+
+    laps.push({
+
+        lapTime:
+            lapTime,
+
+        notes:
+            ""
+    });
+
+
+    lastLapTimestamp =
+        totalSeconds;
+
+
+    rebuildLapTable();
+
+    updateStatistics();
+
+    updateCurrentLapDisplay();
+}
+
+
+/* =========================================================
+   RECALCULATE LAP DATA
+
+   IMPORTANT:
+   laps[] always remains in chronological order.
+
+   Array index 0 = oldest lap.
+   Last array item = newest lap.
+
+   Only the visual table is reversed.
+========================================================= */
+
+function recalculateLaps() {
+
+    let cumulative =
+        0;
+
+
+    laps.forEach(
+
+        function(
+            lap,
+            index
+        ) {
+
+            let value =
+                Number(
+                    lap.lapTime
+                );
+
+
+            if (
+                !Number.isFinite(value)
+                ||
+                value < 0
+            ) {
+
+                value =
+                    0;
+            }
+
+
+            lap.lapTime =
+                value;
+
+
+            lap.lapNumber =
+                index
+                +
+                1;
+
+
+            if (
+                typeof lap.notes
+                !==
+                "string"
+            ) {
+
+                lap.notes =
+                    "";
+            }
+
+
+            cumulative +=
+                value;
+
+
+            lap.cumulative =
+                cumulative;
+        }
+    );
+}
+
+
+/* =========================================================
+   REBUILD LAP TABLE
+
+   NEWEST LAP IS DISPLAYED FIRST.
+
+   IMPORTANT:
+   We do NOT reverse laps[] itself.
+
+   Instead, we walk the existing array from
+   the final index backwards to zero.
+
+   This keeps calculations, import/export,
+   numbering and insertion logic chronological.
+========================================================= */
+
+function rebuildLapTable() {
+
+    recalculateLaps();
+
+
+    const table =
+        $("lapTable");
+
+
+    table.innerHTML =
+        "";
+
+
+    /*
+        Walk backwards through the chronological
+        lap array.
+
+        Example:
+
+        Internal:
+        Lap 1
+        Lap 2
+        Lap 3
+
+        Display:
+        Lap 3
+        Lap 2
+        Lap 1
+    */
+
+    for (
+        let index =
+            laps.length - 1;
+
+        index >= 0;
+
+        index--
+    ) {
+
+        const lap =
+            laps[index];
+
+
+        const row =
+            document.createElement(
+                "tr"
+            );
+
+
+        /* =================================
+           LAP NUMBER
+        ================================= */
+
+
+        const numberCell =
+            document.createElement(
+                "td"
+            );
+
+
+        numberCell.textContent =
+            lap.lapNumber;
+
+
+        row.appendChild(
+            numberCell
+        );
+
+
+        /* =================================
+           EDITABLE LAP TIME
+        ================================= */
+
+
+        const timeCell =
+            document.createElement(
+                "td"
+            );
+
+
+        const timeInput =
+            document.createElement(
+                "input"
+            );
+
+
+        timeInput.type =
+            "number";
+
+
+        timeInput.min =
+            "0";
+
+
+        timeInput.step =
+            "0.001";
+
+
+        timeInput.value =
+            lap.lapTime
+            .toFixed(3);
+
+
+        timeInput.className =
+            "lap-time-input";
+
+
+        timeInput.setAttribute(
+
+            "aria-label",
+
+            "Lap "
+            +
+            lap.lapNumber
+            +
+            " time"
+        );
+
+
+        /*
+            The original chronological index is
+            retained even though the row is being
+            displayed in reverse order.
+        */
+
+        timeInput.addEventListener(
+
+            "change",
+
+            function() {
+
+                editLapTime(
+                    index,
+                    this.value
+                );
+            }
+        );
+
+
+        timeCell.appendChild(
+            timeInput
+        );
+
+
+        row.appendChild(
+            timeCell
+        );
+
+
+        /* =================================
+           CUMULATIVE
+        ================================= */
+
+
+        const cumulativeCell =
+            document.createElement(
+                "td"
+            );
+
+
+        cumulativeCell.textContent =
+            lap.cumulative
+            .toFixed(3);
+
+
+        row.appendChild(
+            cumulativeCell
+        );
+
+
+        /* =================================
+           NOTES
+        ================================= */
+
+
+        const notesCell =
+            document.createElement(
+                "td"
+            );
+
+
+        const notesInput =
+            document.createElement(
+                "textarea"
+            );
+
+
+        notesInput.className =
+            "notes-input";
+
+
+        notesInput.rows =
+            1;
+
+
+        notesInput.placeholder =
+            "Add note...";
+
+
+        notesInput.value =
+            lap.notes
+            ||
+            "";
+
+
+        notesInput.setAttribute(
+
+            "aria-label",
+
+            "Notes for lap "
+            +
+            lap.lapNumber
+        );
+
+
+        notesInput.addEventListener(
+
+            "input",
+
+            function() {
+
+                laps[index].notes =
+                    this.value;
+            }
+        );
+
+
+        notesCell.appendChild(
+            notesInput
+        );
+
+
+        row.appendChild(
+            notesCell
+        );
+
+
+        /* =================================
+           ACTION BUTTONS
+        ================================= */
+
+
+        const actionCell =
+            document.createElement(
+                "td"
+            );
+
+
+        actionCell.className =
+            "row-actions";
+
+
+        /*
+            BEFORE and AFTER still refer to
+            chronological order.
+
+            For example:
+
+            + Before on Lap 5 inserts a new
+            historical lap between Lap 4 and
+            the old Lap 5.
+
+            Lap numbers are then recalculated.
+        */
+
+        const insertBefore =
+            document.createElement(
+                "button"
+            );
+
+
+        insertBefore.textContent =
+            "+ Before";
+
+
+        insertBefore.className =
+            "insert-button";
+
+
+        insertBefore.onclick =
+            function() {
+
+                insertLap(
+                    index
+                );
+            };
+
+
+        const insertAfter =
+            document.createElement(
+                "button"
+            );
+
+
+        insertAfter.textContent =
+            "+ After";
+
+
+        insertAfter.className =
+            "insert-button";
+
+
+        insertAfter.onclick =
+            function() {
+
+                insertLap(
+                    index + 1
+                );
+            };
+
+
+        const deleteButton =
+            document.createElement(
+                "button"
+            );
+
+
+        deleteButton.textContent =
+            "Delete";
+
+
+        deleteButton.className =
+            "delete-button";
+
+
+        deleteButton.onclick =
+            function() {
+
+                deleteLap(
+                    index
+                );
+            };
+
+
+        actionCell.appendChild(
+            insertBefore
+        );
+
+
+        actionCell.appendChild(
+            insertAfter
+        );
+
+
+        actionCell.appendChild(
+            deleteButton
+        );
+
+
+        row.appendChild(
+            actionCell
+        );
+
+
+        table.appendChild(
+            row
+        );
+    }
+
+
+    $("summary").textContent =
+        "Total Laps: "
+        +
+        laps.length;
+}
+
+
+/* =========================================================
+   EDIT LAP TIME
+========================================================= */
+
+function editLapTime(
+    index,
+    newValue
+) {
+
+    const value =
+        Number(
+            newValue
+        );
+
+
+    if (
+        !Number.isFinite(value)
+        ||
+        value < 0
+    ) {
+
+        alert(
+            "Please enter a valid lap time."
+        );
+
+
+        rebuildLapTable();
+
+        return;
+    }
+
+
+    laps[index].lapTime =
+        value;
+
+
+    rebuildLapTable();
+
+    updateStatistics();
+}
+
+
+/* =========================================================
+   INSERT LAP
+========================================================= */
+
+function insertLap(index) {
+
+    const input =
+        prompt(
+
+            "Enter the new lap time in seconds:",
+
+            "0.000"
+        );
+
+
+    if (
+        input === null
+    ) {
+
+        return;
+    }
+
+
+    const value =
+        Number(
+            input
+        );
+
+
+    if (
+        !Number.isFinite(value)
+        ||
+        value < 0
+    ) {
+
+        alert(
+            "Please enter a valid lap time."
+        );
+
+        return;
+    }
+
+
+    laps.splice(
+
+        index,
+
+        0,
+
+        {
+            lapTime:
+                value,
+
+            notes:
+                ""
+        }
+    );
+
+
+    rebuildLapTable();
+
+    updateStatistics();
+}
+
+
+/* =========================================================
+   DELETE LAP
+========================================================= */
+
+function deleteLap(index) {
+
+    const lapNumber =
+        laps[index]
+        ?
+        laps[index].lapNumber
+        :
+        index + 1;
+
+
+    const confirmed =
+        confirm(
+
+            "Delete Lap "
+            +
+            lapNumber
+            +
+            "?"
+        );
+
+
+    if (!confirmed) {
+
+        return;
+    }
+
+
+    laps.splice(
+        index,
+        1
+    );
+
+
+    rebuildLapTable();
+
+    updateStatistics();
+}
+
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+function updateStatistics() {
+
+    if (
+        laps.length
+        ===
+        0
+    ) {
+
+        $("latestLap").textContent =
+            "---.---";
+
+
+        $("averageLap").textContent =
+            "---.---";
+
+
+        $("summary").textContent =
+            "Total Laps: 0";
+
+
+        return;
+    }
+
+
+    recalculateLaps();
+
+
+    /*
+        The final element in laps[] remains
+        the chronologically newest lap.
+    */
+
+    const latest =
+        laps[
+            laps.length
+            -
+            1
+        ].lapTime;
+
+
+    $("latestLap").textContent =
+        latest
+        .toFixed(3);
+
+
+    const total =
+        laps.reduce(
+
+            function(
+                sum,
+                lap
+            ) {
+
+                return (
+                    sum
+                    +
+                    lap.lapTime
+                );
+            },
+
+            0
+        );
+
+
+    const average =
+        total
+        /
+        laps.length;
+
+
+    $("averageLap").textContent =
+        average
+        .toFixed(3);
+
+
+    $("summary").textContent =
+        "Total Laps: "
+        +
+        laps.length;
+}
+
+
+/* =========================================================
+   TXT IMPORT UI
+========================================================= */
+
+function openTXTImport() {
+
+    $("txtFileInput").value =
+        "";
+
+
+    $("txtFileInput").click();
+}
+
+
+function showImportMessage(
+    message,
+    success
+) {
+
+    const element =
+        $("importMessage");
+
+
+    element.textContent =
+        message;
+
+
+    element.className =
+
+        success
+
+        ? "import-success"
+
+        : "import-error";
+}
+
+
+function clearImportMessage() {
+
+    const element =
+        $("importMessage");
+
+
+    element.textContent =
+        "";
+
+
+    element.className =
+        "";
+}
+
+
+/* =========================================================
+   TXT FILE READER
+========================================================= */
+
+function importTXTFile(event) {
+
+    const file =
+        event.target.files[0];
+
+
+    if (!file) {
+
+        return;
+    }
+
+
+    if (
+        running
+        ||
+        paused
+    ) {
+
+        alert(
+            "Stop or reset the current timer before importing a historical study."
+        );
+
+
+        return;
+    }
+
+
+    const reader =
+        new FileReader();
+
+
+    reader.onload =
+        function(loadEvent) {
+
+            try {
+
+                parseImportedTXT(
+
+                    loadEvent
+                    .target
+                    .result,
+
+                    file.name
+                );
+            }
+
+            catch(error) {
+
+                console.error(
+                    error
+                );
+
+
+                showImportMessage(
+
+                    "Import failed: "
+                    +
+                    error.message,
+
+                    false
+                );
+            }
+        };
+
+
+    reader.onerror =
+        function() {
+
+            showImportMessage(
+
+                "The TXT file could not be read.",
+
+                false
+            );
+        };
+
+
+    reader.readAsText(
+        file
+    );
+}
+
+
+/* =========================================================
+   TXT IMPORT PARSER
+========================================================= */
+
+function parseImportedTXT(
+    text,
+    fileName
+) {
+
+    const lines =
+        text
+
+        .replace(
+            /\r\n/g,
+            "\n"
+        )
+
+        .replace(
+            /\r/g,
+            "\n"
+        )
+
+        .split(
+            "\n"
+        );
+
+
+    let importedStudyName =
+        "";
+
+
+    let importedMachine =
+        "";
+
+
+    let importedPartNumber =
+        "";
+
+
+    let importedOperator =
+        "";
+
+
+    const importedLaps =
+        [];
+
+
+    let tableFound =
+        false;
+
+
+    let notesColumnIndex =
+        -1;
+
+
+    for (
+        let i = 0;
+        i < lines.length;
+        i++
+    ) {
+
+        const rawLine =
+            lines[i];
+
+
+        const line =
+            rawLine.trim();
+
+
+        if (
+            line === ""
+        ) {
+
+            continue;
+        }
+
+
+        /* =================================
+           METADATA
+        ================================= */
+
+
+        if (
+            line
+            .toLowerCase()
+            .startsWith(
+                "study name:"
+            )
+        ) {
+
+            importedStudyName =
+                rawLine
+                .substring(
+                    rawLine.indexOf(":")
+                    +
+                    1
+                )
+                .trim();
+
+
+            continue;
+        }
+
+
+        if (
+            line
+            .toLowerCase()
+            .startsWith(
+                "machine:"
+            )
+        ) {
+
+            importedMachine =
+                rawLine
+                .substring(
+                    rawLine.indexOf(":")
+                    +
+                    1
+                )
+                .trim();
+
+
+            continue;
+        }
+
+
+        if (
+            line
+            .toLowerCase()
+            .startsWith(
+                "part number:"
+            )
+        ) {
+
+            importedPartNumber =
+                rawLine
+                .substring(
+                    rawLine.indexOf(":")
+                    +
+                    1
+                )
+                .trim();
+
+
+            continue;
+        }
+
+
+        if (
+            line
+            .toLowerCase()
+            .startsWith(
+                "operator:"
+            )
+        ) {
+
+            importedOperator =
+                rawLine
+                .substring(
+                    rawLine.indexOf(":")
+                    +
+                    1
+                )
+                .trim();
+
+
+            continue;
+        }
+
+
+        /* =================================
+           TABLE HEADER
+        ================================= */
+
+
+        if (
+
+            line
+            .toLowerCase()
+            .includes(
+                "lap time"
+            )
+
+            &&
+
+            line
+            .toLowerCase()
+            .includes(
+                "cumulative"
+            )
+        ) {
+
+            tableFound =
+                true;
+
+
+            const headers =
+                rawLine
+                .split(
+                    "\t"
+                );
+
+
+            notesColumnIndex =
+                headers.findIndex(
+
+                    function(header) {
+
+                        return (
+                            header
+                            .trim()
+                            .toLowerCase()
+                            ===
+                            "notes"
+                        );
+                    }
+                );
+
+
+            continue;
+        }
+
+
+        /* =================================
+           LAP ROWS
+        ================================= */
+
+
+        if (
+            tableFound
+        ) {
+
+            const columns =
+                rawLine
+                .split(
+                    "\t"
+                );
+
+
+            if (
+                columns.length
+                <
+                2
+            ) {
+
+                continue;
+            }
+
+
+            const lapNumber =
+                Number(
+                    columns[0]
+                    .trim()
+                );
+
+
+            const lapTime =
+                Number(
+                    columns[1]
+                    .trim()
+                );
+
+
+            if (
+
+                Number.isFinite(
+                    lapNumber
+                )
+
+                &&
+
+                Number.isFinite(
+                    lapTime
+                )
+
+                &&
+
+                lapTime >= 0
+            ) {
+
+                let notes =
+                    "";
+
+
+                if (
+
+                    notesColumnIndex
+                    >=
+                    0
+
+                    &&
+
+                    columns[
+                        notesColumnIndex
+                    ]
+                    !==
+                    undefined
+                ) {
+
+                    notes =
+                        columns[
+                            notesColumnIndex
+                        ];
+                }
+
+
+                importedLaps.push({
+
+                    /*
+                        Save original lap number
+                        temporarily so an imported
+                        reverse-sorted TXT file could
+                        still be normalized.
+                    */
+
+                    importedLapNumber:
+                        lapNumber,
+
+                    lapTime:
+                        lapTime,
+
+                    notes:
+                        notes
+                });
+            }
+        }
+    }
+
+
+    const metadataFound =
+
+        importedStudyName
+        !== ""
+
+        ||
+
+        importedMachine
+        !== ""
+
+        ||
+
+        importedPartNumber
+        !== ""
+
+        ||
+
+        importedOperator
+        !== "";
+
+
+    if (
+
+        !metadataFound
+
+        &&
+
+        importedLaps.length
+        ===
+        0
+    ) {
+
+        throw new Error(
+            "This does not appear to be a Time Study TXT export."
+        );
+    }
+
+
+    /*
+        Ensure imported lap data is chronological
+        regardless of how the source TXT happened
+        to be ordered.
+
+        Lap 1 -> oldest
+        Highest lap number -> newest
+    */
+
+    importedLaps.sort(
+
+        function(a,b) {
+
+            return (
+                a.importedLapNumber
+                -
+                b.importedLapNumber
+            );
+        }
+    );
+
+
+    importedLaps.forEach(
+
+        function(lap) {
+
+            delete lap.importedLapNumber;
+        }
+    );
+
+
+    laps =
+        importedLaps;
+
+
+    /* =================================
+       LOAD IMPORTED METADATA
+    ================================= */
+
+
+    if (
+        importedStudyName
+        !==
+        ""
+    ) {
+
+        $("studyName").value =
+            importedStudyName;
+    }
+
+
+    if (
+        importedMachine
+        !==
+        ""
+    ) {
+
+        $("machine").value =
+            importedMachine;
+    }
+
+
+    if (
+        importedPartNumber
+        !==
+        ""
+    ) {
+
+        $("partNumber").value =
+            importedPartNumber;
+    }
+
+
+    if (
+        importedOperator
+        !==
+        ""
+    ) {
+
+        $("operator").value =
+            importedOperator;
+    }
+
+
+    /* =================================
+       RESET LIVE TIMER
+    ================================= */
+
+
+    clearInterval(
+        timerInterval
+    );
+
+
+    timerInterval =
+        null;
+
+
+    startTime =
+        0;
+
+
+    elapsedTime =
+        0;
+
+
+    running =
+        false;
+
+
+    paused =
+        false;
+
+
+    stopped =
+        false;
+
+
+    studyStarted =
+        false;
+
+
+    lastLapTimestamp =
+        0;
+
+
+    $("status").textContent =
+        "HISTORIC STUDY LOADED";
+
+
+    rebuildLapTable();
+
+    updateStatistics();
+
+    updateTimerDisplay();
+
+
+    showImportMessage(
+
+        "Loaded "
+        +
+        importedLaps.length
+        +
+        " historical lap"
+        +
+        (
+            importedLaps.length
+            ===
+            1
+
+            ? ""
+
+            : "s"
+        )
+        +
+        " from "
+        +
+        fileName
+        +
+        ".",
+
+        true
+    );
+}
+
+
+/* =========================================================
+   SAFE FILE NAME
+========================================================= */
+
+function getSafeFileName() {
+
+    let name =
+        getStudyName();
+
+
+    name =
+        name.replace(
+            /[\\/:*?"<>|]/g,
+            "_"
+        );
+
+
+    name =
+        name.replace(
+            /[. ]+$/g,
+            ""
+        );
+
+
+    return (
+        name
+        ||
+        "TimeStudy"
+    );
+}
+
+
+/* =========================================================
+   FILE SAVE
+========================================================= */
+
+function saveFile(
+    blob,
+    fileName
+) {
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.href =
+        url;
+
+
+    link.download =
+        fileName;
+
+
+    document.body
+    .appendChild(
+        link
+    );
+
+
+    link.click();
+
+
+    document.body
+    .removeChild(
+        link
+    );
+
+
+    setTimeout(
+
+        function() {
+
+            URL.revokeObjectURL(
+                url
+            );
+
+        },
+
+        1000
+    );
+}
+
+
+/* =========================================================
+   TXT SAFE NOTES
+========================================================= */
+
+function cleanNoteForText(note) {
+
+    return String(
+        note
+        ||
+        ""
+    )
+
+    .replace(
+        /\t/g,
+        " "
+    )
+
+    .replace(
+        /\r?\n/g,
+        " "
+    );
+}
+
+
+/* =========================================================
+   TXT EXPORT
+
+   Export intentionally stays chronological.
+
+   This means external analysis receives:
+   Lap 1, Lap 2, Lap 3...
+
+   even though the on-screen table displays:
+   Lap 3, Lap 2, Lap 1.
+========================================================= */
+
+function exportTXT() {
+
+    recalculateLaps();
+
+
+    let content =
+        "";
+
+
+    content +=
+        "Study Name: "
+        +
+        getStudyName()
+        +
+        "\r\n";
+
+
+    content +=
+        "Machine: "
+        +
+        fieldValue(
+            "machine"
+        )
+        +
+        "\r\n";
+
+
+    content +=
+        "Part Number: "
+        +
+        fieldValue(
+            "partNumber"
+        )
+        +
+        "\r\n";
+
+
+    content +=
+        "Operator: "
+        +
+        fieldValue(
+            "operator"
+        )
+        +
+        "\r\n";
+
+
+    content +=
+        "Export Date: "
+        +
+        new Date()
+        .toLocaleString()
+        +
+        "\r\n";
+
+
+    content +=
+        "Total Laps: "
+        +
+        laps.length
+        +
+        "\r\n";
+
+
+    if (
+        laps.length
+        >
+        0
+    ) {
+
+        const average =
+            laps.reduce(
+
+                function(
+                    sum,
+                    lap
+                ) {
+
+                    return (
+                        sum
+                        +
+                        lap.lapTime
+                    );
+                },
+
+                0
+            )
+
+            /
+
+            laps.length;
+
+
+        content +=
+            "Average Lap: "
+            +
+            average
+            .toFixed(3)
+            +
+            " sec\r\n";
+    }
+
+
+    content +=
+        "\r\n";
+
+
+    content +=
+        "Lap\t"
+        +
+        "Lap Time (sec)\t"
+        +
+        "Cumulative Time (sec)\t"
+        +
+        "Notes"
+        +
+        "\r\n";
+
+
+    /*
+        Chronological export.
+    */
+
+    laps.forEach(
+
+        function(lap) {
+
+            content +=
+                lap.lapNumber
+
+                +
+                "\t"
+
+                +
+                lap.lapTime
+                .toFixed(3)
+
+                +
+                "\t"
+
+                +
+                lap.cumulative
+                .toFixed(3)
+
+                +
+                "\t"
+
+                +
+                cleanNoteForText(
+                    lap.notes
+                )
+
+                +
+                "\r\n";
+        }
+    );
+
+
+    const blob =
+        new Blob(
+
+            [content],
+
+            {
+                type:
+                    "text/plain;charset=utf-8"
+            }
+        );
+
+
+    saveFile(
+
+        blob,
+
+        getSafeFileName()
+        +
+        ".txt"
+    );
+}
+
+
+/* =========================================================
+   XML HELPERS
+========================================================= */
+
+function xmlEscape(value) {
+
+    return String(value)
+
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+
+    .replace(
+        /</g,
+        "&lt;"
+    )
+
+    .replace(
+        />/g,
+        "&gt;"
+    )
+
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+
+    .replace(
+        /'/g,
+        "&apos;"
+    );
+}
+
+
+function excelCell(
+    value,
+    type
+) {
+
+    return (
+
+        '<Cell>'
+
+        +
+        '<Data ss:Type="'
+
+        +
+        type
+
+        +
+        '">'
+
+        +
+        xmlEscape(
+            value
+        )
+
+        +
+        '</Data>'
+
+        +
+        '</Cell>'
+    );
+}
+
+
+/* =========================================================
+   OFFLINE EXCEL EXPORT
+========================================================= */
+
+function exportExcel() {
+
+    recalculateLaps();
+
+
+    let average =
+        0;
+
+
+    if (
+        laps.length
+        >
+        0
+    ) {
+
+        average =
+            laps.reduce(
+
+                function(
+                    sum,
+                    lap
+                ) {
+
+                    return (
+                        sum
+                        +
+                        lap.lapTime
+                    );
+                },
+
+                0
+            )
+
+            /
+
+            laps.length;
+    }
+
+
+    let rows =
+        "";
+
+
+    rows +=
+        "<Row>"
+
+        +
+        excelCell(
+            "Study Name",
+            "String"
+        )
+
+        +
+        excelCell(
+            getStudyName(),
+            "String"
+        )
+
+        +
+        "</Row>";
+
+
+    rows +=
+        "<Row>"
+
+        +
+        excelCell(
+            "Machine",
+            "String"
+        )
+
+        +
+        excelCell(
+            fieldValue(
+                "machine"
+            ),
+            "String"
+        )
+
+        +
+        "</Row>";
+
+
+    rows +=
+        "<Row>"
+
+        +
+        excelCell(
+            "Part Number",
+            "String"
+        )
+
+        +
+        excelCell(
+            fieldValue(
+                "partNumber"
+            ),
+            "String"
+        )
+
+        +
+        "</Row>";
+
+
+    rows +=
+        "<Row>"
+
+        +
+        excelCell(
+            "Operator",
+            "String"
+        )
+
+        +
+        excelCell(
+            fieldValue(
+                "operator"
+            ),
+            "String"
+        )
+
+        +
+        "</Row>";
+
+
+    rows +=
+        "<Row>"
+
+        +
+        excelCell(
+            "Export Date",
+            "String"
+        )
+
+        +
+        excelCell(
+
+            new Date()
+            .toLocaleString(),
+
+            "String"
+        )
+
+        +
+        "</Row>";
+
+
+    rows +=
+        "<Row>"
+
+        +
+        excelCell(
+            "Total Laps",
+            "String"
+        )
+
+        +
+        excelCell(
+            laps.length,
+            "Number"
+        )
+
+        +
+        "</Row>";
+
+
+    rows +=
+        "<Row>"
+
+        +
+        excelCell(
+            "Average Lap",
+            "String"
+        )
+
+        +
+        excelCell(
+            average
+            .toFixed(3),
+            "Number"
+        )
+
+        +
+        "</Row>";
+
+
+    rows +=
+        "<Row></Row>";
+
+
+    rows +=
+        "<Row>"
+
+        +
+        excelCell(
+            "Lap Number",
+            "String"
+        )
+
+        +
+        excelCell(
+            "Lap Time (sec)",
+            "String"
+        )
+
+        +
+        excelCell(
+            "Cumulative Time (sec)",
+            "String"
+        )
+
+        +
+        excelCell(
+            "Notes",
+            "String"
+        )
+
+        +
+        "</Row>";
+
+
+    /*
+        Excel remains chronological for
+        easier analysis.
+    */
+
+    laps.forEach(
+
+        function(lap) {
+
+            rows +=
+                "<Row>"
+
+                +
+                excelCell(
+                    lap.lapNumber,
+                    "Number"
+                )
+
+                +
+                excelCell(
+                    lap.lapTime
+                    .toFixed(3),
+                    "Number"
+                )
+
+                +
+                excelCell(
+                    lap.cumulative
+                    .toFixed(3),
+                    "Number"
+                )
+
+                +
+                excelCell(
+                    lap.notes
+                    ||
+                    "",
+                    "String"
+                )
+
+                +
+                "</Row>";
+        }
+    );
+
+
+    const xml =
+
+        '<?xml version="1.0"?>'
+
+        +
+        '<?mso-application progid="Excel.Sheet"?>'
+
+        +
+        '<Workbook '
+
+        +
+        'xmlns="urn:schemas-microsoft-com:office:spreadsheet" '
+
+        +
+        'xmlns:o="urn:schemas-microsoft-com:office:office" '
+
+        +
+        'xmlns:x="urn:schemas-microsoft-com:office:excel" '
+
+        +
+        'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'
+
+        +
+        '<Worksheet ss:Name="Time Study">'
+
+        +
+        '<Table>'
+
+        +
+        rows
+
+        +
+        '</Table>'
+
+        +
+        '</Worksheet>'
+
+        +
+        '</Workbook>';
+
+
+    const blob =
+        new Blob(
+
+            [xml],
+
+            {
+                type:
+                    "application/vnd.ms-excel"
+            }
+        );
+
+
+    saveFile(
+
+        blob,
+
+        getSafeFileName()
+        +
+        ".xml"
+    );
+}
+
+
+/* =========================================================
+   THEME
+========================================================= */
+
+function toggleTheme() {
+
+    document.body
+    .classList
+    .toggle(
+        "light"
+    );
+
+
+    localStorage.setItem(
+
+        "timeStudyTheme",
+
+        document.body
+        .classList
+        .contains(
+            "light"
+        )
+
+        ? "light"
+
+        : "dark"
+    );
+}
+
+
+function loadTheme() {
+
+    if (
+
+        localStorage.getItem(
+            "timeStudyTheme"
+        )
+
+        ===
+
+        "light"
+    ) {
+
+        document.body
+        .classList
+        .add(
+            "light"
+        );
+    }
+}
+
+
+/* =========================================================
+   KEYBOARD SHORTCUT
+========================================================= */
+
+document.addEventListener(
+
+    "keydown",
+
+    function(event) {
+
+        const activeElement =
+            document.activeElement;
+
+
+        const typingInField =
+
+            activeElement
+
+            &&
+
+            (
+                activeElement.tagName
+                ===
+                "INPUT"
+
+                ||
+
+                activeElement.tagName
+                ===
+                "TEXTAREA"
+
+                ||
+
+                activeElement.tagName
+                ===
+                "SELECT"
+
+                ||
+
+                activeElement
+                .isContentEditable
+            );
+
+
+        /*
+            Spacebar works normally while
+            typing in any input or Notes field.
+        */
+
+        if (
+            typingInField
+        ) {
+
+            return;
+        }
+
+
+        /*
+            Spacebar = Lap elsewhere.
+        */
+
+        if (
+            event.code
+            ===
+            "Space"
+        ) {
+
+            event.preventDefault();
+
+
+            if (
+                running
+            ) {
+
+                recordLap();
+            }
+        }
+    }
+);
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+loadTheme();
+
+updateTimerDisplay();
+
+updateStatistics();
+
+</script>
+
+</body>
+</html>
