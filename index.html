@@ -260,6 +260,30 @@ body.light .brand-logo {
     letter-spacing:.6px;
 }
 
+.settings-about p {
+    margin:6px 0 0 0;
+}
+
+.about-name {
+    font-size:15px;
+    font-weight:bold;
+}
+
+.about-version {
+    margin-left:6px;
+
+    color:var(--muted);
+
+    font-weight:normal;
+}
+
+.about-credit {
+    color:var(--muted);
+
+    font-size:13px;
+    line-height:1.45;
+}
+
 .setting-row {
     display:flex;
 
@@ -2021,6 +2045,25 @@ tr.excluded-row .lap-time-input {
 
     </section>
 
+
+    <section class="settings-group settings-about">
+
+        <h3>About</h3>
+
+        <p class="about-name">
+            Time Study
+            <span
+                id="aboutVersion"
+                class="about-version"
+            ></span>
+        </p>
+
+        <p class="about-credit">
+            Made by Ben Orchard in August 2026 at Flex-N-Gate Detroit.
+        </p>
+
+    </section>
+
 </aside>
 
 
@@ -2592,7 +2635,7 @@ tr.excluded-row .lap-time-input {
 
 
 <div class="app-version">
-    v15
+    v16
 </div>
 
 </div>
@@ -8532,6 +8575,9 @@ let settingsReturnFocus = null;
 function openSettings() {
 
     settingsReturnFocus = document.activeElement;
+
+    $("aboutVersion").textContent =
+        document.querySelector(".app-version").textContent.trim();
 
     $("settingsBackdrop").hidden = false;
     $("settingsPanel").hidden = false;
