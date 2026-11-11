@@ -438,6 +438,146 @@ button {
     filter:brightness(0.85);
 }
 
+/*
+    Hold-to-lap: stop long presses from selecting
+    text or opening the touch callout / context menu.
+*/
+
+.lap-button.hold-mode {
+    -webkit-user-select:none;
+    user-select:none;
+
+    -webkit-touch-callout:none;
+
+    touch-action:none;
+}
+
+.lap-button.armed,
+.lap-button.armed:hover {
+    background:var(--yellow);
+    color:#111111;
+
+    filter:none;
+
+    box-shadow:
+        0 0 0 4px
+        rgba(255,193,7,.35);
+
+    transform:scale(.97);
+
+    animation:
+        lap-armed-pulse
+        1s ease-in-out infinite;
+}
+
+@keyframes lap-armed-pulse {
+    0%, 100% {
+        box-shadow:
+            0 0 0 3px
+            rgba(255,193,7,.30);
+    }
+    50% {
+        box-shadow:
+            0 0 0 8px
+            rgba(255,193,7,.12);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lap-button.armed {
+        animation:none;
+    }
+}
+
+.hold-toggle {
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    margin-top:12px;
+
+    color:var(--text);
+
+    font-size:14px;
+    font-weight:bold;
+
+    cursor:pointer;
+
+    -webkit-user-select:none;
+    user-select:none;
+}
+
+.hold-toggle input {
+    position:absolute;
+
+    opacity:0;
+
+    width:1px;
+    height:1px;
+}
+
+.hold-switch {
+    position:relative;
+
+    flex:none;
+
+    width:40px;
+    height:22px;
+
+    background:var(--button);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:11px;
+
+    transition:
+        background .15s ease;
+}
+
+.hold-switch::after {
+    content:"";
+
+    position:absolute;
+
+    top:2px;
+    left:2px;
+
+    width:16px;
+    height:16px;
+
+    background:#ffffff;
+
+    border-radius:50%;
+
+    transition:
+        transform .15s ease;
+}
+
+.hold-toggle input:checked + .hold-switch {
+    background:var(--accent);
+
+    border-color:var(--accent);
+}
+
+.hold-toggle input:checked + .hold-switch::after {
+    transform:translateX(18px);
+}
+
+.hold-toggle input:focus-visible + .hold-switch {
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+}
+
+.hold-toggle-hint {
+    color:var(--muted);
+
+    font-weight:normal;
+}
+
 .stop-button {
     border-color:var(--red);
 }
@@ -1529,8 +1669,8 @@ tr.excluded-row .lap-time-input {
 
 
     <button
+        id="lapButton"
         class="lap-button"
-        onclick="recordLap()"
     >
         Lap
     </button>
@@ -1559,6 +1699,28 @@ tr.excluded-row .lap-time-input {
     </button>
 
 </div>
+
+
+<!-- ==================================================
+     HOLD-TO-LAP OPTION
+================================================== -->
+
+<label
+    class="hold-toggle"
+    for="holdToLapToggle"
+>
+    <input
+        id="holdToLapToggle"
+        type="checkbox"
+        onchange="setHoldToLap(this.checked)"
+    >
+    <span class="hold-switch" aria-hidden="true"></span>
+    <span>
+        Hold to lap
+        <span class="hold-toggle-hint">(records when you release)</span>
+    </span>
+</label>
+
 
 
 <!-- ==================================================
@@ -1621,7 +1783,10 @@ tr.excluded-row .lap-time-input {
 </div>
 
 
-<div class="hotkey-note">
+<div
+    id="hotkeyNote"
+    class="hotkey-note"
+>
     Spacebar = Lap when you are not typing in a field.
     On mobile, either volume button = Lap (where the browser allows it).
 </div>
@@ -1926,7 +2091,7 @@ tr.excluded-row .lap-time-input {
 
 
 <div class="app-version">
-    v12
+    v13
 </div>
 
 </div>
@@ -7644,130 +7809,308 @@ window.addEventListener(
 
 
 /* =========================================================
-   KEYBOARD SHORTCUT
+   LAP TRIGGERS (BUTTON, SPACEBAR, VOLUME KEYS)
+
+   Normal mode:   a lap is recorded on press / click.
+   Hold to lap:   pressing arms the Lap button and the lap
+                  is recorded on release (dead man trigger).
+                  Sliding a finger off the button before
+                  releasing cancels the lap.
 ========================================================= */
 
-document.addEventListener(
+let holdToLap = false;
 
-    "keydown",
+try {
+    holdToLap =
+        localStorage.getItem("timeStudyHoldToLap") === "1";
+} catch (error) {}
 
-    function(event) {
 
-        /*
-            Volume Up / Volume Down = Lap.
+/*
+    What armed the lap: "pointer", "space" or "volume".
+*/
 
-            Mobile browsers report the hardware
-            volume buttons with these key values
-            (older ones use the legacy names or
-            keyCodes 174/175, 182/183, 24/25).
-            Works even while a field is focused,
-            since volume buttons never type text.
-        */
+let lapArmedBy = null;
 
-        const volumeKeys = [
+
+function vibrate(ms) {
+
+    try {
+        if (navigator.vibrate) {
+            navigator.vibrate(ms);
+        }
+    } catch (error) {}
+}
+
+
+function armLap(source) {
+
+    if (!running || lapArmedBy) {
+        return false;
+    }
+
+    lapArmedBy = source;
+
+    const button = $("lapButton");
+
+    button.classList.add("armed");
+    button.textContent = "Release";
+
+    vibrate(15);
+
+    return true;
+}
+
+
+function disarmLap() {
+
+    lapArmedBy = null;
+
+    const button = $("lapButton");
+
+    button.classList.remove("armed");
+    button.textContent = "Lap";
+}
+
+
+function releaseLap(source) {
+
+    if (lapArmedBy !== source) {
+        return;
+    }
+
+    disarmLap();
+
+    if (running) {
+        recordLap();
+        vibrate(30);
+    }
+}
+
+
+function applyHoldToLap() {
+
+    $("holdToLapToggle").checked = holdToLap;
+
+    $("lapButton").classList.toggle("hold-mode", holdToLap);
+
+    $("hotkeyNote").textContent =
+        holdToLap
+        ? "Hold to lap is on: press and hold Lap (or Spacebar / a volume button) and the lap is recorded when you release. Slide off the button to cancel."
+        : "Spacebar = Lap when you are not typing in a field. On mobile, either volume button = Lap (where the browser allows it).";
+
+    disarmLap();
+}
+
+
+function setHoldToLap(enabled) {
+
+    holdToLap = Boolean(enabled);
+
+    try {
+        localStorage.setItem(
+            "timeStudyHoldToLap",
+            holdToLap ? "1" : "0"
+        );
+    } catch (error) {}
+
+    applyHoldToLap();
+}
+
+
+function initLapButton() {
+
+    const button = $("lapButton");
+
+    /* Normal mode: plain click */
+
+    button.addEventListener(
+        "click",
+        function() {
+            if (!holdToLap) {
+                recordLap();
+            }
+        }
+    );
+
+    /* Hold mode: arm on press */
+
+    button.addEventListener(
+        "pointerdown",
+        function(event) {
+
+            if (!holdToLap || event.button !== 0) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (armLap("pointer")) {
+                try {
+                    button.setPointerCapture(event.pointerId);
+                } catch (error) {}
+            }
+        }
+    );
+
+    /* Hold mode: record on release, unless the finger slid off */
+
+    button.addEventListener(
+        "pointerup",
+        function(event) {
+
+            if (lapArmedBy !== "pointer") {
+                return;
+            }
+
+            const rect = button.getBoundingClientRect();
+            const slop = 16;
+
+            const inside =
+                event.clientX >= rect.left - slop
+                && event.clientX <= rect.right + slop
+                && event.clientY >= rect.top - slop
+                && event.clientY <= rect.bottom + slop;
+
+            if (inside) {
+                releaseLap("pointer");
+            } else {
+                disarmLap();
+            }
+        }
+    );
+
+    button.addEventListener(
+        "pointercancel",
+        function() {
+            if (lapArmedBy === "pointer") {
+                disarmLap();
+            }
+        }
+    );
+
+    button.addEventListener(
+        "contextmenu",
+        function(event) {
+            if (holdToLap) {
+                event.preventDefault();
+            }
+        }
+    );
+
+    /* A lost key-up or a tab switch never leaves the button armed */
+
+    window.addEventListener("blur", disarmLap);
+
+    applyHoldToLap();
+}
+
+
+/* =========================================================
+   KEYBOARD SHORTCUTS
+========================================================= */
+
+/*
+    Mobile browsers report the hardware volume buttons
+    with these key values (older ones use the legacy
+    names or keyCodes 174/175, 182/183, 24/25).
+*/
+
+function isVolumeKey(event) {
+
+    return (
+        [
             "AudioVolumeUp",
             "AudioVolumeDown",
             "VolumeUp",
             "VolumeDown"
-        ];
-
-        const volumeKeyCodes = [
-            24, 25, 174, 175, 182, 183
-        ];
-
-        if (
-            volumeKeys.includes(event.key)
-            ||
-            volumeKeyCodes.includes(event.keyCode)
-        ) {
-
-            event.preventDefault();
+        ].includes(event.key)
+        ||
+        [24, 25, 174, 175, 182, 183].includes(event.keyCode)
+    );
+}
 
 
-            /*
-                Ignore auto-repeat from holding
-                the button down.
-            */
+function isTypingInField() {
 
-            if (
-                running
-                &&
-                !event.repeat
-            ) {
+    const activeElement =
+        document.activeElement;
 
-                recordLap();
-            }
-
-            return;
-        }
-
-
-        const activeElement =
-            document.activeElement;
+    return Boolean(
+        activeElement
+        &&
+        (
+            activeElement.tagName === "INPUT"
+            || activeElement.tagName === "TEXTAREA"
+            || activeElement.tagName === "SELECT"
+            || activeElement.isContentEditable
+        )
+    );
+}
 
 
-        const typingInField =
+document.addEventListener(
+    "keydown",
+    function(event) {
 
-            activeElement
+        /*
+            Volume Up / Volume Down = Lap. Works even
+            while a field is focused, since volume
+            buttons never type text.
+        */
 
+        let source = null;
+
+        if (isVolumeKey(event)) {
+
+            source = "volume";
+
+        } else if (
+            event.code === "Space"
             &&
-
-            (
-                activeElement.tagName
-                ===
-                "INPUT"
-
-                ||
-
-                activeElement.tagName
-                ===
-                "TEXTAREA"
-
-                ||
-
-                activeElement.tagName
-                ===
-                "SELECT"
-
-                ||
-
-                activeElement
-                .isContentEditable
-            );
-
-
-        /*
-            Spacebar works normally while
-            typing in any input or Notes field.
-        */
-
-        if (
-            typingInField
+            !isTypingInField()
         ) {
 
+            /* Spacebar works normally while typing in a field */
+
+            source = "space";
+        }
+
+        if (!source) {
             return;
         }
 
+        event.preventDefault();
 
-        /*
-            Spacebar = Lap elsewhere.
-        */
+        /* Ignore auto-repeat from holding the key down */
 
-        if (
-            event.code
-            ===
-            "Space"
-        ) {
+        if (event.repeat) {
+            return;
+        }
 
+        if (holdToLap) {
+            armLap(source);
+        } else if (running) {
+            recordLap();
+        }
+    }
+);
+
+
+document.addEventListener(
+    "keyup",
+    function(event) {
+
+        const source =
+            isVolumeKey(event)
+            ? "volume"
+            : event.code === "Space"
+            ? "space"
+            : null;
+
+        if (source && lapArmedBy === source) {
             event.preventDefault();
-
-
-            if (
-                running
-            ) {
-
-                recordLap();
-            }
+            releaseLap(source);
         }
     }
 );
@@ -7780,6 +8123,8 @@ document.addEventListener(
 loadTheme();
 
 initDetailsPanel();
+
+initLapButton();
 
 applyAnalysisMode();
 
