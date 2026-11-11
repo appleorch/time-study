@@ -143,6 +143,215 @@ body.light .brand-logo {
     filter:none;
 }
 
+.settings-button {
+    display:inline-flex;
+
+    align-items:center;
+    justify-content:center;
+
+    flex:none;
+
+    width:44px;
+    min-height:44px;
+
+    margin-left:auto;
+    padding:0;
+
+    background:transparent;
+    color:var(--muted);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:10px;
+}
+
+.settings-backdrop {
+    position:fixed;
+    inset:0;
+    z-index:50;
+
+    background:rgba(0,0,0,.45);
+}
+
+.settings-panel {
+    position:fixed;
+
+    top:0;
+    right:0;
+    bottom:0;
+    z-index:51;
+
+    width:min(400px, 100vw);
+
+    overflow-y:auto;
+
+    padding:
+        max(18px, env(safe-area-inset-top))
+        20px
+        max(24px, env(safe-area-inset-bottom));
+
+    background:var(--panel);
+    color:var(--text);
+
+    border-left:
+        1px solid
+        var(--border);
+
+    box-shadow:
+        -12px 0 30px
+        rgba(0,0,0,.35);
+
+    text-align:left;
+}
+
+.settings-head {
+    display:flex;
+
+    align-items:center;
+    justify-content:space-between;
+
+    margin-bottom:8px;
+}
+
+.settings-head h2 {
+    margin:0;
+
+    font-size:20px;
+}
+
+.settings-panel .settings-close {
+    width:40px;
+    min-height:40px;
+
+    padding:0;
+
+    font-size:24px;
+    line-height:1;
+
+    background:transparent;
+    color:var(--muted);
+
+    border:none;
+}
+
+.settings-group {
+    padding:14px 0 6px 0;
+
+    border-top:
+        1px solid
+        var(--border);
+}
+
+.settings-group:first-of-type {
+    border-top:none;
+}
+
+.settings-group h3 {
+    margin:0 0 4px 0;
+
+    color:var(--muted);
+
+    font-size:12px;
+
+    text-transform:uppercase;
+
+    letter-spacing:.6px;
+}
+
+.setting-row {
+    display:flex;
+
+    flex-wrap:wrap;
+
+    align-items:center;
+    justify-content:space-between;
+
+    gap:10px 16px;
+
+    padding:10px 0;
+
+    cursor:default;
+}
+
+label.setting-row {
+    cursor:pointer;
+}
+
+.setting-text {
+    display:flex;
+
+    flex:1 1 200px;
+
+    flex-direction:column;
+
+    gap:3px;
+}
+
+.setting-name {
+    font-size:15px;
+    font-weight:bold;
+}
+
+.setting-desc {
+    color:var(--muted);
+
+    font-size:12px;
+    line-height:1.4;
+}
+
+.switch-input {
+    position:absolute;
+
+    opacity:0;
+
+    width:1px;
+    height:1px;
+}
+
+.switch-input:checked + .hold-switch {
+    background:var(--accent);
+
+    border-color:var(--accent);
+}
+
+.switch-input:checked + .hold-switch::after {
+    transform:translateX(18px);
+}
+
+.switch-input:focus-visible + .hold-switch {
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+}
+
+.lap-table:not(.show-ts) .ts-col {
+    display:none;
+}
+
+.ts-col {
+    white-space:nowrap;
+
+    font-variant-numeric:
+        tabular-nums;
+}
+
+.ts-end {
+    font-weight:bold;
+}
+
+.ts-start {
+    margin-top:2px;
+
+    color:var(--muted);
+
+    font-size:12px;
+}
+
+.ts-none {
+    color:var(--muted);
+}
+
 .app-header .app-title {
     margin:0;
 
@@ -458,6 +667,16 @@ button {
 
     .tabs .tab.active:hover {
         background:var(--button);
+    }
+
+    .settings-button:hover {
+        background:var(--button-hover);
+        color:var(--text);
+    }
+
+    .settings-panel .settings-close:hover {
+        background:var(--button-hover);
+        color:var(--text);
     }
 
     .mode-switch .mode-option:hover {
@@ -1602,7 +1821,207 @@ tr.excluded-row .lap-time-input {
         Time Study
     </h1>
 
+    <button
+        id="settingsButton"
+        class="settings-button"
+        aria-label="Settings"
+        aria-haspopup="dialog"
+        aria-controls="settingsPanel"
+        title="Settings"
+        onclick="openSettings()"
+    >
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path fill="currentColor" d="M19.14 12.94a7.43 7.43 0 0 0 .05-.94 7.43 7.43 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54a7.03 7.03 0 0 0-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.65 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.43 7.43 0 0 0-.05.94c0 .32.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.38 1.05.7 1.63.94l.36 2.54a.5.5 0 0 0 .5.42h3.84a.5.5 0 0 0 .5-.42l.36-2.54a7.03 7.03 0 0 0 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/>
+        </svg>
+    </button>
+
 </header>
+
+
+<!-- ==================================================
+     SETTINGS PANEL
+================================================== -->
+
+<div
+    id="settingsBackdrop"
+    class="settings-backdrop"
+    hidden
+    onclick="closeSettings()"
+></div>
+
+<aside
+    id="settingsPanel"
+    class="settings-panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="settingsTitle"
+    hidden
+>
+
+    <div class="settings-head">
+
+        <h2 id="settingsTitle">Settings</h2>
+
+        <button
+            id="settingsClose"
+            class="settings-close"
+            aria-label="Close settings"
+            onclick="closeSettings()"
+        >
+            &times;
+        </button>
+
+    </div>
+
+
+    <section class="settings-group">
+
+        <h3>Lap Table</h3>
+
+        <label
+            class="setting-row"
+            for="setTimestamps"
+        >
+            <span class="setting-text">
+                <span class="setting-name">Show timestamps</span>
+                <span class="setting-desc">
+                    Clock time each lap started and ended, for matching
+                    cycle times against machine data. Exports always include them.
+                </span>
+            </span>
+            <input
+                id="setTimestamps"
+                class="switch-input"
+                type="checkbox"
+                onchange="setSetting('showTimestamps', this.checked)"
+            >
+            <span class="hold-switch" aria-hidden="true"></span>
+        </label>
+
+        <div class="setting-row">
+            <span class="setting-text">
+                <span class="setting-name">Time format</span>
+                <span class="setting-desc">Used for timestamps in the app.</span>
+            </span>
+            <div
+                class="mode-switch"
+                role="group"
+                aria-label="Time format"
+            >
+                <button
+                    id="setClock24"
+                    class="mode-option"
+                    onclick="setSetting('clock', '24')"
+                >
+                    24-hour
+                </button>
+                <button
+                    id="setClock12"
+                    class="mode-option"
+                    onclick="setSetting('clock', '12')"
+                >
+                    12-hour
+                </button>
+            </div>
+        </div>
+
+    </section>
+
+
+    <section class="settings-group">
+
+        <h3>Timing</h3>
+
+        <label
+            class="setting-row"
+            for="holdToLapToggle"
+        >
+            <span class="setting-text">
+                <span class="setting-name">Hold to lap</span>
+                <span class="setting-desc">
+                    Press and hold Lap; the lap records when you release.
+                    Slide off the button to cancel.
+                </span>
+            </span>
+            <input
+                id="holdToLapToggle"
+                class="switch-input"
+                type="checkbox"
+                onchange="setHoldToLap(this.checked)"
+            >
+            <span class="hold-switch" aria-hidden="true"></span>
+        </label>
+
+    </section>
+
+
+    <section class="settings-group">
+
+        <h3>Analysis</h3>
+
+        <div class="setting-row">
+            <span class="setting-text">
+                <span class="setting-name">Analysis mode</span>
+                <span class="setting-desc">Basic shows core stats; Advanced shows everything. Excel exports follow this too.</span>
+            </span>
+            <div
+                class="mode-switch"
+                role="group"
+                aria-label="Analysis mode"
+            >
+                <button
+                    id="setModeBasic"
+                    class="mode-option"
+                    onclick="setAnalysisMode('basic')"
+                >
+                    Basic
+                </button>
+                <button
+                    id="setModeAdvanced"
+                    class="mode-option"
+                    onclick="setAnalysisMode('advanced')"
+                >
+                    Advanced
+                </button>
+            </div>
+        </div>
+
+    </section>
+
+
+    <section class="settings-group">
+
+        <h3>Appearance</h3>
+
+        <div class="setting-row">
+            <span class="setting-text">
+                <span class="setting-name">Theme</span>
+            </span>
+            <div
+                class="mode-switch"
+                role="group"
+                aria-label="Theme"
+            >
+                <button
+                    id="setThemeDark"
+                    class="mode-option"
+                    onclick="setTheme('dark')"
+                >
+                    Dark
+                </button>
+                <button
+                    id="setThemeLight"
+                    class="mode-option"
+                    onclick="setTheme('light')"
+                >
+                    Light
+                </button>
+            </div>
+        </div>
+
+    </section>
+
+</aside>
 
 
 <!-- ==================================================
@@ -1799,25 +2218,7 @@ tr.excluded-row .lap-time-input {
 </div>
 
 
-<!-- ==================================================
-     HOLD-TO-LAP OPTION
-================================================== -->
 
-<label
-    class="hold-toggle"
-    for="holdToLapToggle"
->
-    <input
-        id="holdToLapToggle"
-        type="checkbox"
-        onchange="setHoldToLap(this.checked)"
-    >
-    <span class="hold-switch" aria-hidden="true"></span>
-    <span>
-        Hold to lap
-        <span class="hold-toggle-hint">(records when you release)</span>
-    </span>
-</label>
 
 
 
@@ -1850,11 +2251,6 @@ tr.excluded-row .lap-time-input {
         hidden
     >
         Export Excel
-    </button>
-
-
-    <button onclick="toggleTheme()">
-        Toggle Theme
     </button>
 
 </div>
@@ -1964,7 +2360,10 @@ tr.excluded-row .lap-time-input {
 
 <div class="table-wrapper">
 
-<table>
+<table
+    id="lapTableEl"
+    class="lap-table"
+>
 
 <thead>
 
@@ -1984,6 +2383,10 @@ tr.excluded-row .lap-time-input {
 
     <th>
         Cumulative (sec)
+    </th>
+
+    <th class="ts-col">
+        Timestamp
     </th>
 
     <th>
@@ -2189,7 +2592,7 @@ tr.excluded-row .lap-time-input {
 
 
 <div class="app-version">
-    v14
+    v15
 </div>
 
 </div>
@@ -2218,6 +2621,15 @@ let timerInterval = null;
 let laps = [];
 
 let lastLapTimestamp = 0;
+
+/*
+    Wall-clock timestamps (ms since epoch) for
+    correlating laps with machine data.
+*/
+
+let studyStartedAt = null;
+
+let lastLapEndedAt = null;
 
 
 /* =========================================================
@@ -2504,6 +2916,10 @@ function startTimer() {
 
     studyStarted = true;
 
+    studyStartedAt = Date.now();
+
+    lastLapEndedAt = studyStartedAt;
+
 
     timerInterval =
         setInterval(
@@ -2686,6 +3102,10 @@ function resetTimer() {
 
     lastLapTimestamp = 0;
 
+    studyStartedAt = null;
+
+    lastLapEndedAt = null;
+
 
     $("lapTable").innerHTML =
         "";
@@ -2743,14 +3163,20 @@ function recordLap() {
         lastLapTimestamp;
 
 
-    laps.push({
+    const now = Date.now();
 
+    laps.push({
         lapTime:
             lapTime,
-
         notes:
-            ""
+            "",
+        startedAt:
+            lastLapEndedAt,
+        endedAt:
+            now
     });
+
+    lastLapEndedAt = now;
 
 
     lastLapTimestamp =
@@ -2827,6 +3253,12 @@ function recalculateLaps() {
                     "";
             }
 
+
+            lap.startedAt =
+                Number.isFinite(lap.startedAt) ? lap.startedAt : null;
+
+            lap.endedAt =
+                Number.isFinite(lap.endedAt) ? lap.endedAt : null;
 
             lap.excluded =
                 lap.excluded === true;
@@ -3087,6 +3519,58 @@ function rebuildLapTable() {
 
         row.appendChild(
             cumulativeCell
+        );
+
+
+        /* =================================
+           TIMESTAMP (shown via Settings)
+        ================================= */
+
+        const tsCell =
+            document.createElement(
+                "td"
+            );
+
+        tsCell.className =
+            "ts-col";
+
+        if (lap.endedAt) {
+
+            tsCell.title =
+                (lap.startedAt ? formatDateTime(lap.startedAt) + " \u2192 " : "")
+                + formatDateTime(lap.endedAt);
+
+            const endLine =
+                document.createElement("div");
+
+            endLine.className = "ts-end";
+
+            endLine.textContent =
+                formatClock(lap.endedAt);
+
+            tsCell.appendChild(endLine);
+
+            if (lap.startedAt) {
+
+                const startLine =
+                    document.createElement("div");
+
+                startLine.className = "ts-start";
+
+                startLine.textContent =
+                    "from " + formatClock(lap.startedAt);
+
+                tsCell.appendChild(startLine);
+            }
+
+        } else {
+
+            tsCell.innerHTML =
+                '<span class="ts-none" title="Added manually or imported without a timestamp">n/a</span>';
+        }
+
+        row.appendChild(
+            tsCell
         );
 
 
@@ -3698,6 +4182,12 @@ function parseImportedTXT(
     let excludedColumnIndex =
         -1;
 
+    let startColumnIndex =
+        -1;
+
+    let endColumnIndex =
+        -1;
+
 
     for (
         let i = 0;
@@ -3862,6 +4352,21 @@ function parseImportedTXT(
                     }
                 );
 
+            const headerIndex =
+                function(name) {
+                    return headers.findIndex(
+                        function(header) {
+                            return header.trim().toLowerCase() === name;
+                        }
+                    );
+                };
+
+            startColumnIndex =
+                headerIndex("lap start");
+
+            endColumnIndex =
+                headerIndex("lap end");
+
             excludedColumnIndex =
                 headers.findIndex(
                     function(header) {
@@ -3985,7 +4490,15 @@ function parseImportedTXT(
                         &&
                         /^(yes|y|x|true|1)$/i.test(
                             String(columns[excludedColumnIndex] || "").trim()
-                        )
+                        ),
+                    startedAt:
+                        startColumnIndex >= 0
+                        ? parseDateTime(columns[startColumnIndex])
+                        : null,
+                    endedAt:
+                        endColumnIndex >= 0
+                        ? parseDateTime(columns[endColumnIndex])
+                        : null
                 });
             }
         }
@@ -4155,6 +4668,10 @@ function parseImportedTXT(
     lastLapTimestamp =
         0;
 
+
+    studyStartedAt = null;
+
+    lastLapEndedAt = null;
 
     $("status").textContent =
         "HISTORIC STUDY LOADED";
@@ -4381,6 +4898,15 @@ function exportTXT() {
         "\r\n";
 
 
+    if (studyStartedAt) {
+        content +=
+            "Study Started: "
+            +
+            formatDateTime(studyStartedAt)
+            +
+            "\r\n";
+    }
+
     content +=
         "Total Laps: "
         +
@@ -4446,7 +4972,7 @@ function exportTXT() {
         +
         "Cumulative Time (sec)\t"
         +
-        "Notes\tExcluded"
+        "Notes\tExcluded\tLap Start\tLap End"
         +
         "\r\n";
 
@@ -4487,6 +5013,14 @@ function exportTXT() {
                 "\t"
                 +
                 (lap.excluded ? "Yes" : "")
+                +
+                "\t"
+                +
+                (lap.startedAt ? formatDateTime(lap.startedAt) : "")
+                +
+                "\t"
+                +
+                (lap.endedAt ? formatDateTime(lap.endedAt) : "")
 
                 +
                 "\r\n";
@@ -4698,7 +5232,8 @@ const XS = {
     bold: 6,
     note: 7,
     num1: 8,
-    center: 9
+    center: 9,
+    datetime: 10
 };
 
 
@@ -4870,10 +5405,11 @@ function xlsxSheet(options) {
 const XLSX_STYLES =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-    + '<numFmts count="3">'
+    + '<numFmts count="4">'
     + '<numFmt numFmtId="164" formatCode="0.000"/>'
     + '<numFmt numFmtId="165" formatCode="0.0%"/>'
     + '<numFmt numFmtId="166" formatCode="0.0"/>'
+    + '<numFmt numFmtId="167" formatCode="yyyy-mm-dd hh:mm:ss.000"/>'
     + "</numFmts>"
     + '<fonts count="4">'
     + '<font><sz val="11"/><name val="Calibri"/><family val="2"/></font>'
@@ -4891,7 +5427,7 @@ const XLSX_STYLES =
     + '<border><left/><right/><top/><bottom style="thin"><color rgb="FF8EA9C8"/></bottom><diagonal/></border>'
     + "</borders>"
     + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-    + '<cellXfs count="10">'
+    + '<cellXfs count="11">'
     + '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
     + '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>'
     + '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
@@ -4902,6 +5438,7 @@ const XLSX_STYLES =
     + '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
     + '<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
     + '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf>'
+    + '<xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
     + "</cellXfs>"
     + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
     + '<dxfs count="1"><dxf><font><i/><strike/><color rgb="FF999999"/></font></dxf></dxfs>'
@@ -5475,7 +6012,8 @@ function exportExcel() {
                 "Included Time (sec)", "Included #", "Moving Range (sec)",
                 "Mean", "UCL", "LCL", "Outside Limits", "Last Included", "Chart Value"
             ]
-        );
+        )
+        .concat(["Lap Start", "Lap End"]);
 
     const lapRows = [
         lapHeaders.map(
@@ -5583,7 +6121,14 @@ function exportExcel() {
                 );
             }
 
-            lapRows[i + 1] = row;
+            /* Wall-clock timestamps (real Excel date/time values) */
+
+            row.push(
+                lap.startedAt ? { v: excelDateSerial(lap.startedAt), s: XS.datetime } : null,
+                lap.endedAt ? { v: excelDateSerial(lap.endedAt), s: XS.datetime } : null
+            );
+
+                        lapRows[i + 1] = row;
         }
     );
 
@@ -5676,11 +6221,14 @@ function exportExcel() {
             xml: xlsxSheet({
                 rows: lapRows,
                 widths:
-                    !hasStats
-                    ? [7, 15, 10, 16, 40]
-                    : basic
-                    ? [7, 15, 10, 16, 40, 19, 10, 12]
-                    : [7, 15, 10, 16, 40, 19, 11, 19, 10, 10, 10, 14, 13, 12],
+                    (
+                        !hasStats
+                        ? [7, 15, 10, 16, 40]
+                        : basic
+                        ? [7, 15, 10, 16, 40, 19, 10, 12]
+                        : [7, 15, 10, 16, 40, 19, 11, 19, 10, 10, 10, 14, 13, 12]
+                    )
+                    .concat([24, 24]),
                 hiddenCols:
                     !hasStats
                     ? []
@@ -5907,26 +6455,10 @@ function exportExcel() {
 
 function toggleTheme() {
 
-    document.body
-    .classList
-    .toggle(
-        "light"
-    );
-
-
-    localStorage.setItem(
-
-        "timeStudyTheme",
-
-        document.body
-        .classList
-        .contains(
-            "light"
-        )
-
-        ? "light"
-
-        : "dark"
+    setTheme(
+        document.body.classList.contains("light")
+        ? "dark"
+        : "light"
     );
 }
 
@@ -7510,6 +8042,14 @@ function attachTrendHover(container, ctx) {
 
             html += tooltipRow("Cumulative", fmt(lap.cumulative) + " s");
 
+            if (lap.endedAt) {
+                html += tooltipRow(
+                    "Clock",
+                    (lap.startedAt ? formatClock(lap.startedAt) + " \u2192 " : "")
+                    + formatClock(lap.endedAt)
+                );
+            }
+
             if (lap.notes.trim() !== "") {
                 html +=
                     '<div class="tt-note">“'
@@ -7652,6 +8192,9 @@ function applyAnalysisMode() {
 
     $("modeBasic").classList.toggle("active", basic);
     $("modeAdvanced").classList.toggle("active", !basic);
+
+    $("setModeBasic").classList.toggle("active", basic);
+    $("setModeAdvanced").classList.toggle("active", !basic);
 
     $("modeBasic").setAttribute("aria-pressed", String(basic));
     $("modeAdvanced").setAttribute("aria-pressed", String(!basic));
@@ -7904,6 +8447,208 @@ window.addEventListener(
             setTimeout(refreshAnalysis, 150);
     }
 );
+
+
+/* =========================================================
+   SETTINGS
+
+   Stored in localStorage. Theme, analysis mode and
+   hold-to-lap keep their own keys (set elsewhere);
+   the settings panel just controls all of them.
+========================================================= */
+
+const settings = {
+    showTimestamps: false,
+    clock: "24"
+};
+
+try {
+    Object.assign(
+        settings,
+        JSON.parse(localStorage.getItem("timeStudySettings") || "{}")
+    );
+} catch (error) {}
+
+
+function setSetting(key, value) {
+
+    settings[key] = value;
+
+    try {
+        localStorage.setItem(
+            "timeStudySettings",
+            JSON.stringify(settings)
+        );
+    } catch (error) {}
+
+    applySettings();
+}
+
+
+function applySettings() {
+
+    $("lapTableEl").classList.toggle(
+        "show-ts",
+        settings.showTimestamps === true
+    );
+
+    $("setTimestamps").checked =
+        settings.showTimestamps === true;
+
+    $("setClock24").classList.toggle("active", settings.clock !== "12");
+    $("setClock12").classList.toggle("active", settings.clock === "12");
+
+    const light =
+        document.body.classList.contains("light");
+
+    $("setThemeDark").classList.toggle("active", !light);
+    $("setThemeLight").classList.toggle("active", light);
+
+    rebuildLapTable();
+}
+
+
+function setTheme(theme) {
+
+    document.body.classList.toggle(
+        "light",
+        theme === "light"
+    );
+
+    try {
+        localStorage.setItem(
+            "timeStudyTheme",
+            theme === "light" ? "light" : "dark"
+        );
+    } catch (error) {}
+
+    applySettings();
+}
+
+
+let settingsReturnFocus = null;
+
+
+function openSettings() {
+
+    settingsReturnFocus = document.activeElement;
+
+    $("settingsBackdrop").hidden = false;
+    $("settingsPanel").hidden = false;
+
+    applySettings();
+
+    $("settingsClose").focus();
+}
+
+
+function closeSettings() {
+
+    $("settingsBackdrop").hidden = true;
+    $("settingsPanel").hidden = true;
+
+    if (settingsReturnFocus && settingsReturnFocus.focus) {
+        settingsReturnFocus.focus();
+    }
+}
+
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+        if (event.key === "Escape" && !$("settingsPanel").hidden) {
+            closeSettings();
+        }
+    }
+);
+
+
+/* =========================================================
+   CLOCK FORMATTING
+========================================================= */
+
+function pad2(n) {
+
+    return String(n).padStart(2, "0");
+}
+
+
+function formatClock(ms) {
+
+    const d = new Date(ms);
+
+    const h = d.getHours();
+
+    const mmss =
+        ":" + pad2(d.getMinutes())
+        + ":" + pad2(d.getSeconds());
+
+    if (settings.clock === "12") {
+        return (
+            ((h % 12) || 12) + mmss
+            + (h < 12 ? " AM" : " PM")
+        );
+    }
+
+    return pad2(h) + mmss;
+}
+
+
+/*
+    Full local date and time with milliseconds,
+    e.g. 2026-11-11 14:32:07.418 (used in tooltips
+    and exports).
+*/
+
+function formatDateTime(ms) {
+
+    const d = new Date(ms);
+
+    return (
+        d.getFullYear()
+        + "-" + pad2(d.getMonth() + 1)
+        + "-" + pad2(d.getDate())
+        + " " + pad2(d.getHours())
+        + ":" + pad2(d.getMinutes())
+        + ":" + pad2(d.getSeconds())
+        + "." + String(d.getMilliseconds()).padStart(3, "0")
+    );
+}
+
+
+function parseDateTime(text) {
+
+    const m =
+        String(text || "")
+        .trim()
+        .match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/);
+
+    if (!m) {
+        return null;
+    }
+
+    const d =
+        new Date(
+            Number(m[1]), Number(m[2]) - 1, Number(m[3]),
+            Number(m[4]), Number(m[5]), Number(m[6]),
+            Number((m[7] || "0").padEnd(3, "0"))
+        );
+
+    return Number.isFinite(d.getTime()) ? d.getTime() : null;
+}
+
+
+/*
+    Excel date serial (local time) for a timestamp.
+*/
+
+function excelDateSerial(ms) {
+
+    const offsetMinutes =
+        new Date(ms).getTimezoneOffset();
+
+    return (ms - offsetMinutes * 60000) / 86400000 + 25569;
+}
 
 
 /* =========================================================
@@ -8223,6 +8968,8 @@ loadTheme();
 initDetailsPanel();
 
 initLapButton();
+
+applySettings();
 
 applyAnalysisMode();
 
