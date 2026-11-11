@@ -399,6 +399,16 @@ button {
         background:var(--button);
     }
 
+    .mode-switch .mode-option:hover {
+        background:var(--button-hover);
+        color:var(--text);
+    }
+
+    .mode-switch .mode-option.active:hover {
+        background:var(--accent);
+        color:#ffffff;
+    }
+
     .details-panel .details-toggle:hover {
         background:rgba(128,128,128,.08);
     }
@@ -667,7 +677,72 @@ tbody tr:first-child {
 }
 
 .analysis-header {
-    margin-bottom:18px;
+    display:flex;
+
+    flex-wrap:wrap;
+
+    align-items:flex-start;
+    justify-content:space-between;
+
+    gap:12px 20px;
+
+    margin-bottom:8px;
+}
+
+.analysis-heading {
+    min-width:0;
+}
+
+.mode-switch {
+    display:inline-flex;
+
+    gap:3px;
+
+    padding:3px;
+
+    background:var(--panel2);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:9px;
+}
+
+.mode-switch .mode-option {
+    min-height:34px;
+
+    padding:
+        6px 16px;
+
+    font-size:13px;
+
+    background:transparent;
+    color:var(--muted);
+
+    border:
+        1px solid
+        transparent;
+
+    border-radius:6px;
+}
+
+.mode-switch .mode-option.active {
+    background:var(--accent);
+    color:#ffffff;
+}
+
+.mode-description {
+    margin:
+        0 0 18px 0;
+
+    color:var(--muted);
+
+    font-size:13px;
+}
+
+.analysis.mode-basic .advanced-only {
+    display:none;
 }
 
 .analysis-header h2 {
@@ -1637,16 +1712,53 @@ tbody tr:first-child {
 
     <div class="analysis-header">
 
-        <h2 id="analysisTitle">
-            Study Analysis
-        </h2>
+        <div class="analysis-heading">
+
+            <h2 id="analysisTitle">
+                Study Analysis
+            </h2>
+
+            <div
+                id="analysisSubtitle"
+                class="analysis-subtitle"
+            ></div>
+
+        </div>
+
 
         <div
-            id="analysisSubtitle"
-            class="analysis-subtitle"
-        ></div>
+            class="mode-switch"
+            role="group"
+            aria-label="Analysis mode"
+        >
+
+            <button
+                id="modeBasic"
+                class="mode-option"
+                aria-pressed="false"
+                onclick="setAnalysisMode('basic')"
+            >
+                Basic
+            </button>
+
+            <button
+                id="modeAdvanced"
+                class="mode-option"
+                aria-pressed="true"
+                onclick="setAnalysisMode('advanced')"
+            >
+                Advanced
+            </button>
+
+        </div>
 
     </div>
+
+
+    <p
+        id="modeDescription"
+        class="mode-description"
+    ></p>
 
 
     <div
@@ -1684,7 +1796,7 @@ tbody tr:first-child {
 
             <section class="analysis-card">
 
-                <h3>Detailed Statistics</h3>
+                <h3 id="statTableTitle">Detailed Statistics</h3>
 
                 <dl
                     id="statTable"
@@ -1705,8 +1817,8 @@ tbody tr:first-child {
                 <div class="legend">
                     <span><i class="key key-line"></i>Lap time</span>
                     <span><i class="key key-mean"></i>Mean</span>
-                    <span><i class="key key-limit"></i>Control limits</span>
-                    <span><i class="key key-out"></i>Outside limits</span>
+                    <span class="advanced-only"><i class="key key-limit"></i>Control limits</span>
+                    <span class="advanced-only"><i class="key key-out"></i>Outside limits</span>
                 </div>
 
             </div>
@@ -1716,7 +1828,7 @@ tbody tr:first-child {
                 class="chart"
             ></div>
 
-            <p class="chart-note">
+            <p class="chart-note advanced-only">
                 Control limits use the individuals chart method
                 (mean &plusmn; 2.66 &times; average moving range).
                 Laps outside them likely had a special cause worth checking.
@@ -1725,7 +1837,7 @@ tbody tr:first-child {
         </section>
 
 
-        <section class="analysis-card">
+        <section class="analysis-card advanced-only">
 
             <div class="chart-head">
 
@@ -1751,7 +1863,7 @@ tbody tr:first-child {
 
 
 <div class="app-version">
-    v10.1
+    v11
 </div>
 
 </div>
@@ -4507,6 +4619,8 @@ function chartSpace(title, plotArea, legend) {
 
 function controlChartXML(data) {
 
+    const basic = data.basic;
+
     const last = data.n + 1;
 
     const lapNumbers =
@@ -4571,11 +4685,15 @@ function controlChartXML(data) {
             data.laps.map(function(lap) { return lap.lapTime; }),
             lineStyle("0A84FF", 22225),
             markerStyle("circle", 6, "0A84FF"),
-            outsidePoints
+            basic ? "" : outsidePoints
         )
-        + series(1, "F", "Mean", repeat(data.stats.mean), lineStyle("2E9E5B", 19050), markerStyle("none"))
-        + series(2, "G", "UCL", repeat(data.stats.ucl), lineStyle("7F7F7F", 15875, "dash"), markerStyle("none"))
-        + series(3, "H", "LCL", repeat(data.stats.lcl), lineStyle("7F7F7F", 15875, "dash"), markerStyle("none"))
+        + series(1, basic ? "E" : "F", "Mean", repeat(data.stats.mean), lineStyle("2E9E5B", 19050), markerStyle("none"))
+        + (
+            basic
+            ? ""
+            : series(2, "G", "UCL", repeat(data.stats.ucl), lineStyle("7F7F7F", 15875, "dash"), markerStyle("none"))
+              + series(3, "H", "LCL", repeat(data.stats.lcl), lineStyle("7F7F7F", 15875, "dash"), markerStyle("none"))
+        )
         + '<c:marker val="1"/>'
         + '<c:axId val="50010"/><c:axId val="50020"/>'
         + "</c:lineChart>"
@@ -4598,7 +4716,7 @@ function controlChartXML(data) {
         + '<c:crossAx val="50010"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx>'
         + "</c:plotArea>";
 
-    return chartSpace("Lap Times (Control Chart)", plotArea, true);
+    return chartSpace(basic ? "Lap Times" : "Lap Times (Control Chart)", plotArea, true);
 }
 
 
@@ -4718,6 +4836,7 @@ function exportExcel() {
     const n = laps.length;
     const last = n + 1;
     const hasStats = n >= 2;
+    const basic = analysisMode === "basic";
 
     const R = "Laps!$B$2:$B$" + last;
 
@@ -4732,7 +4851,7 @@ function exportExcel() {
     const summary = [];
 
     summary[0] = [
-        { v: "Time Study Summary", s: XS.title }
+        { v: basic ? "Time Study Summary (Basic)" : "Time Study Summary", s: XS.title }
     ];
 
     const info = [
@@ -4813,7 +4932,16 @@ function exportExcel() {
             ["cph", "Cycles per hour", "IF({mean}>0,3600/{mean},0)", stats.cyclesPerHour, XS.num1, "", "3600 / mean (before allowances)"],
             ["shift", "Cycles per 8-hour shift", "{cph}*8", stats.cyclesPerHour * 8, XS.integer, "", "Cycles per hour × 8"],
             ["needed", "Laps needed (±5%, 95%)", "IF({mean}>0,ROUNDUP((1.96*{sd}/(0.05*{mean}))^2,0),0)", stats.requiredLaps, XS.integer, "", "(1.96 × sd / (0.05 × mean))²"]
-        ];
+        ]
+        .filter(
+            function(def) {
+                return (
+                    !basic
+                    || ["count", "total", "mean", "median", "sd", "variance", "min", "max", "range", "cph"]
+                       .includes(def[0])
+                );
+            }
+        );
 
         definitions.forEach(
             function(def, i) {
@@ -4852,7 +4980,7 @@ function exportExcel() {
             { s: XS.header }
         ];
 
-        buildInsights(stats).forEach(
+        buildInsights(stats, analysisMode).forEach(
             function(item) {
                 row++;
                 summary[row] = [
@@ -4880,7 +5008,11 @@ function exportExcel() {
         { v: "Notes", s: XS.header }
     ];
 
-    if (hasStats) {
+    if (hasStats && basic) {
+        lapRows[0].push(
+            { v: "Mean", s: XS.header }
+        );
+    } else if (hasStats) {
         lapRows[0].push(
             { v: "Moving Range (sec)", s: XS.header },
             { v: "Mean", s: XS.header },
@@ -4902,7 +5034,13 @@ function exportExcel() {
                 { v: lap.notes || "" }
             ];
 
-            if (hasStats) {
+            if (hasStats && basic) {
+
+                row.push(
+                    { v: stats.mean, f: "Summary!" + statRefs.mean, s: XS.num3 }
+                );
+
+            } else if (hasStats) {
 
                 const outside =
                     lap.lapTime > stats.ucl || lap.lapTime < stats.lcl;
@@ -4944,7 +5082,7 @@ function exportExcel() {
 
     let countStep = 1;
 
-    if (hasStats) {
+    if (hasStats && !basic) {
 
         const histogram = histogramBins(stats);
         const xs = histogram.xScale;
@@ -4996,9 +5134,14 @@ function exportExcel() {
     const sheets = [
         { name: "Summary", xml: xlsxSheet({ rows: summary, widths: [30, 14, 9, 42], selected: true, hideGrid: true }) },
         { name: "Charts", xml: xlsxSheet({ rows: chartRows, hideGrid: true, drawing: hasStats }) },
-        { name: "Laps", xml: xlsxSheet({ rows: lapRows, widths: hasStats ? [7, 15, 16, 40, 19, 10, 10, 10, 14] : [7, 15, 16, 40], freezeHeader: true }) },
-        { name: "Distribution", xml: xlsxSheet({ rows: distRows, widths: [15, 14, 16, 8], freezeHeader: true }) }
+        { name: "Laps", xml: xlsxSheet({ rows: lapRows, widths: !hasStats ? [7, 15, 16, 40] : basic ? [7, 15, 16, 40, 10] : [7, 15, 16, 40, 19, 10, 10, 10, 14], freezeHeader: true }) }
     ];
+
+    if (!basic) {
+        sheets.push(
+            { name: "Distribution", xml: xlsxSheet({ rows: distRows, widths: [15, 14, 16, 8], freezeHeader: true }) }
+        );
+    }
 
     let contentTypes =
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -5022,7 +5165,11 @@ function exportExcel() {
         contentTypes +=
             '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>'
             + '<Override PartName="/xl/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>'
-            + '<Override PartName="/xl/charts/chart2.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>';
+            + (
+                basic
+                ? ""
+                : '<Override PartName="/xl/charts/chart2.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>'
+            );
     }
 
     contentTypes += "</Types>";
@@ -5137,7 +5284,7 @@ function exportExcel() {
                 + '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"'
                 + ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
                 + chartAnchor(2, "rId1", 3, 25)
-                + chartAnchor(3, "rId2", 27, 49)
+                + (basic ? "" : chartAnchor(3, "rId2", 27, 49))
                 + "</xdr:wsDr>"
         });
 
@@ -5147,14 +5294,18 @@ function exportExcel() {
                 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
                 + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
                 + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart1.xml"/>'
-                + '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart2.xml"/>'
+                + (
+                    basic
+                    ? ""
+                    : '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart2.xml"/>'
+                )
                 + "</Relationships>"
         });
 
         const yScale =
             niceScale(
-                Math.min(stats.min, stats.lcl),
-                Math.max(stats.max, stats.ucl),
+                basic ? stats.min : Math.min(stats.min, stats.lcl),
+                basic ? stats.max : Math.max(stats.max, stats.ucl),
                 5
             );
 
@@ -5164,17 +5315,20 @@ function exportExcel() {
                 n: n,
                 laps: laps,
                 stats: stats,
+                basic: basic,
                 yMin: Math.max(0, yScale.min)
             })
         });
 
-        files.push({
-            name: "xl/charts/chart2.xml",
-            data: histogramChartXML({
-                bins: bins,
-                countStep: countStep
-            })
-        });
+        if (!basic) {
+            files.push({
+                name: "xl/charts/chart2.xml",
+                data: histogramChartXML({
+                    bins: bins,
+                    countStep: countStep
+                })
+            });
+        }
     }
 
     const blob =
@@ -5674,20 +5828,36 @@ function lapList(items) {
    INSIGHTS
 ========================================================= */
 
-function buildInsights(stats) {
+/*
+    Basic mode keeps only these insight sections.
+*/
+
+const BASIC_INSIGHTS = [
+    "consistency",
+    "extremes",
+    "throughput"
+];
+
+
+function buildInsights(stats, mode) {
 
     const insights = [];
+
+    let section = "";
 
     const add =
         function(level, html) {
             insights.push({
                 level: level,
-                html: html
+                html: html,
+                section: section
             });
         };
 
 
     /* Consistency */
+
+    section = "consistency";
 
     const cv = stats.cv;
 
@@ -5721,6 +5891,8 @@ function buildInsights(stats) {
 
 
     /* Special-cause laps */
+
+    section = "limits";
 
     const outside =
         laps.filter(
@@ -5783,6 +5955,8 @@ function buildInsights(stats) {
 
     /* Trend */
 
+    section = "trend";
+
     if (stats.n >= 5 && stats.mean > 0) {
 
         const change =
@@ -5823,6 +5997,8 @@ function buildInsights(stats) {
 
 
     /* First half vs second half */
+
+    section = "halves";
 
     if (stats.n >= 6 && stats.mean > 0) {
 
@@ -5867,6 +6043,8 @@ function buildInsights(stats) {
 
     /* Fastest and slowest */
 
+    section = "extremes";
+
     let fastest = laps[0];
     let slowest = laps[0];
 
@@ -5898,6 +6076,8 @@ function buildInsights(stats) {
 
     /* Throughput */
 
+    section = "throughput";
+
     if (stats.mean > 0) {
 
         add(
@@ -5912,6 +6092,8 @@ function buildInsights(stats) {
 
 
     /* Sample size */
+
+    section = "sampleSize";
 
     if (stats.mean > 0) {
 
@@ -5937,6 +6119,14 @@ function buildInsights(stats) {
                 + " more</strong>."
             );
         }
+    }
+
+    if (mode === "basic") {
+        return insights.filter(
+            function(item) {
+                return BASIC_INSIGHTS.includes(item.section);
+            }
+        );
     }
 
     return insights;
@@ -6055,7 +6245,7 @@ function chartSize(container) {
    LAP TIME CONTROL CHART
 ========================================================= */
 
-function renderTrendChart(stats) {
+function renderTrendChart(stats, basic) {
 
     const container = $("trendChart");
 
@@ -6083,8 +6273,8 @@ function renderTrendChart(stats) {
 
     const yScale =
         niceScale(
-            Math.min(stats.min, stats.lcl),
-            Math.max(stats.max, stats.ucl),
+            basic ? stats.min : Math.min(stats.min, stats.lcl),
+            basic ? stats.max : Math.max(stats.max, stats.ucl),
             5
         );
 
@@ -6187,10 +6377,13 @@ function renderTrendChart(stats) {
             );
         };
 
-    svg += refLine("limit-line", stats.ucl, "UCL");
+    if (!basic) {
 
-    if (stats.lcl > yScale.min) {
-        svg += refLine("limit-line", stats.lcl, "LCL");
+        svg += refLine("limit-line", stats.ucl, "UCL");
+
+        if (stats.lcl > yScale.min) {
+            svg += refLine("limit-line", stats.lcl, "LCL");
+        }
     }
 
     svg += refLine("mean-line", stats.mean, "Mean");
@@ -6221,7 +6414,7 @@ function renderTrendChart(stats) {
     values.forEach(
         function(v, i) {
             const out =
-                v > stats.ucl || v < stats.lcl;
+                !basic && (v > stats.ucl || v < stats.lcl);
             svg +=
                 '<circle class="point' + (out ? " out" : "")
                 + '" cx="' + x(i) + '" cy="' + y(v)
@@ -6248,7 +6441,8 @@ function renderTrendChart(stats) {
             bottom: pad.top + plotHeight,
             xs: values.map(function(v, i) { return x(i); }),
             ys: values.map(function(v) { return y(v); }),
-            stats: stats
+            stats: stats,
+            basic: basic
         }
     );
 }
@@ -6689,9 +6883,14 @@ function attachTrendHover(container, ctx) {
 
             let html =
                 '<div class="tt-title">Lap ' + lap.lapNumber
-                + '<span class="tt-badge ' + (out ? "out" : "in") + '">'
-                + (out ? "Outside limits" : "Within limits")
-                + "</span></div>"
+                + (
+                    ctx.basic
+                    ? ""
+                    : '<span class="tt-badge ' + (out ? "out" : "in") + '">'
+                      + (out ? "Outside limits" : "Within limits")
+                      + "</span>"
+                )
+                + "</div>"
                 + tooltipRow("Lap time", fmt(lap.lapTime) + " s")
                 + tooltipRow(
                     "vs. mean",
@@ -6824,6 +7023,62 @@ function attachHistogramHover(container, ctx) {
 
 
 /* =========================================================
+   ANALYSIS MODE (BASIC / ADVANCED)
+
+   Basic:    core stats, a simple lap chart and a few
+             plain-language insights.
+   Advanced: every statistic, control limits, histogram.
+
+   The Excel export follows the same mode.
+========================================================= */
+
+let analysisMode = "advanced";
+
+try {
+    if (localStorage.getItem("timeStudyAnalysisMode") === "basic") {
+        analysisMode = "basic";
+    }
+} catch (error) {}
+
+
+function applyAnalysisMode() {
+
+    const basic = analysisMode === "basic";
+
+    $("analysisView").classList.toggle("mode-basic", basic);
+
+    $("modeBasic").classList.toggle("active", basic);
+    $("modeAdvanced").classList.toggle("active", !basic);
+
+    $("modeBasic").setAttribute("aria-pressed", String(basic));
+    $("modeAdvanced").setAttribute("aria-pressed", String(!basic));
+
+    $("modeDescription").textContent =
+        basic
+        ? "Basic mode: average, variance and other core stats with a few key insights. Excel exports use this mode too."
+        : "Advanced mode: full statistics, control limits and distribution. Excel exports use this mode too.";
+}
+
+
+function setAnalysisMode(mode) {
+
+    analysisMode =
+        mode === "basic" ? "basic" : "advanced";
+
+    try {
+        localStorage.setItem("timeStudyAnalysisMode", analysisMode);
+    } catch (error) {}
+
+    $("modeBasic").blur();
+    $("modeAdvanced").blur();
+
+    applyAnalysisMode();
+
+    refreshAnalysis();
+}
+
+
+/* =========================================================
    RENDER ANALYSIS
 ========================================================= */
 
@@ -6890,10 +7145,38 @@ function refreshAnalysis() {
         );
 
 
+    const basic = analysisMode === "basic";
+
+
     /* Key figures */
 
     $("keyStats").innerHTML =
-        keyStatCard(
+        basic
+        ? keyStatCard(
+            "Average",
+            fmt(stats.mean),
+            "s",
+            "Median " + fmt(stats.median, 2) + "s"
+        )
+        + keyStatCard(
+            "Std Deviation",
+            fmt(stats.sd),
+            "s",
+            "Typical spread around the average"
+        )
+        + keyStatCard(
+            "Variance",
+            fmt(stats.variance),
+            "s\u00b2",
+            "Std deviation squared"
+        )
+        + keyStatCard(
+            "Laps",
+            String(stats.n),
+            "",
+            fmtDuration(stats.total) + " total"
+        )
+        : keyStatCard(
             "Mean",
             fmt(stats.mean),
             "s",
@@ -6921,7 +7204,23 @@ function refreshAnalysis() {
 
     /* Detailed statistics */
 
-    const rows = [
+    const basicRows = [
+        ["Count", String(stats.n)],
+        ["Average", fmt(stats.mean) + " s"],
+        ["Median", fmt(stats.median) + " s"],
+        ["Standard deviation", fmt(stats.sd) + " s"],
+        ["Variance", fmt(stats.variance) + " s\u00b2"],
+        ["Fastest lap", fmt(stats.min) + " s"],
+        ["Slowest lap", fmt(stats.max) + " s"],
+        ["Range", fmt(stats.range) + " s"],
+        ["Cycles per hour", fmt(stats.cyclesPerHour, 1)],
+        ["Total time", fmtDuration(stats.total)]
+    ];
+
+    $("statTableTitle").textContent =
+        basic ? "Statistics" : "Detailed Statistics";
+
+    const rows = basic ? basicRows : [
         ["Count", String(stats.n)],
         ["Mean", fmt(stats.mean) + " s"],
         ["Median", fmt(stats.median) + " s"],
@@ -6958,7 +7257,7 @@ function refreshAnalysis() {
     /* Insights */
 
     $("insightsList").innerHTML =
-        buildInsights(stats)
+        buildInsights(stats, analysisMode)
         .map(
             function(item) {
                 return (
@@ -6973,9 +7272,11 @@ function refreshAnalysis() {
 
     /* Charts */
 
-    renderTrendChart(stats);
+    renderTrendChart(stats, basic);
 
-    renderHistogram(stats);
+    if (!basic) {
+        renderHistogram(stats);
+    }
 }
 
 
@@ -7128,6 +7429,8 @@ document.addEventListener(
 loadTheme();
 
 initDetailsPanel();
+
+applyAnalysisMode();
 
 updateExportVisibility();
 
