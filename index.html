@@ -48,6 +48,10 @@ body.light {
     box-sizing:border-box;
 }
 
+[hidden] {
+    display:none !important;
+}
+
 body {
     margin:0;
     font-family:Arial,sans-serif;
@@ -84,6 +88,171 @@ body {
 h1 {
     margin-top:0;
     margin-bottom:25px;
+}
+
+
+/* =====================================================
+   TABS
+===================================================== */
+
+.tabs {
+    display:inline-flex;
+
+    gap:4px;
+
+    padding:4px;
+
+    margin:
+        0 auto 22px auto;
+
+    background:var(--panel2);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:10px;
+}
+
+.tabs .tab {
+    min-height:38px;
+
+    padding:
+        8px 22px;
+
+    font-size:14px;
+
+    background:transparent;
+    color:var(--muted);
+
+    border:
+        1px solid
+        transparent;
+
+    border-radius:7px;
+}
+
+.tabs .tab.active {
+    background:var(--button);
+    color:var(--text);
+
+    border-color:var(--border);
+}
+
+
+/* =====================================================
+   STUDY DETAILS PANEL
+===================================================== */
+
+.details-panel {
+    max-width:850px;
+
+    margin:
+        0 auto 25px auto;
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:10px;
+
+    background:var(--panel2);
+
+    text-align:left;
+}
+
+.details-panel .details-toggle {
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    width:100%;
+
+    min-height:48px;
+
+    padding:
+        12px 16px;
+
+    background:transparent;
+    color:var(--text);
+
+    border:none;
+
+    border-radius:10px;
+
+    text-align:left;
+}
+
+.details-title {
+    font-size:14px;
+    font-weight:bold;
+
+    text-transform:uppercase;
+
+    letter-spacing:.6px;
+
+    white-space:nowrap;
+}
+
+.details-summary {
+    flex:1;
+
+    min-width:0;
+
+    color:var(--muted);
+
+    font-size:13px;
+    font-weight:normal;
+
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+
+    visibility:hidden;
+}
+
+.details-panel.collapsed .details-summary {
+    visibility:visible;
+}
+
+.details-chevron {
+    width:9px;
+    height:9px;
+
+    margin-left:auto;
+
+    border-right:
+        2px solid
+        var(--muted);
+
+    border-bottom:
+        2px solid
+        var(--muted);
+
+    transform:
+        translateY(-2px)
+        rotate(45deg);
+
+    transition:
+        transform .15s ease;
+}
+
+.details-panel.collapsed .details-chevron {
+    transform:
+        rotate(-45deg);
+}
+
+.details-panel .study-info {
+    margin:0;
+
+    padding:
+        4px 16px 16px 16px;
+}
+
+.details-panel.collapsed .study-info {
+    display:none;
 }
 
 
@@ -219,6 +388,19 @@ button {
 
     button:hover {
         background:var(--button-hover);
+    }
+
+    .tabs .tab:hover {
+        background:var(--button-hover);
+        color:var(--text);
+    }
+
+    .tabs .tab.active:hover {
+        background:var(--button);
+    }
+
+    .details-panel .details-toggle:hover {
+        background:rgba(128,128,128,.08);
     }
 
     .lap-button:hover {
@@ -477,6 +659,379 @@ tbody tr:first-child {
 
 
 /* =====================================================
+   ANALYSIS
+===================================================== */
+
+.analysis {
+    text-align:left;
+}
+
+.analysis-header {
+    margin-bottom:18px;
+}
+
+.analysis-header h2 {
+    margin:0;
+
+    font-size:22px;
+}
+
+.analysis-subtitle {
+    margin-top:5px;
+
+    color:var(--muted);
+
+    font-size:13px;
+}
+
+.empty-state {
+    padding:48px 16px;
+
+    color:var(--muted);
+
+    text-align:center;
+
+    border:
+        1px dashed
+        var(--border);
+
+    border-radius:10px;
+}
+
+.key-stats {
+    display:grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap:12px;
+
+    margin-bottom:12px;
+}
+
+.key-stats .metric-card {
+    text-align:left;
+}
+
+.metric-unit {
+    margin-left:3px;
+
+    color:var(--muted);
+
+    font-size:14px;
+    font-weight:normal;
+}
+
+.metric-detail {
+    margin-top:4px;
+
+    color:var(--muted);
+
+    font-size:12px;
+}
+
+.analysis-grid {
+    display:grid;
+
+    grid-template-columns:
+        minmax(0,1.2fr)
+        minmax(0,1fr);
+
+    gap:12px;
+}
+
+.analysis-card {
+    min-width:0;
+
+    margin-bottom:12px;
+
+    padding:16px 18px;
+
+    background:var(--panel2);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:10px;
+}
+
+.analysis-card h3 {
+    margin:0 0 12px 0;
+
+    color:var(--muted);
+
+    font-size:13px;
+
+    text-transform:uppercase;
+
+    letter-spacing:.6px;
+}
+
+.insights {
+    margin:0;
+    padding:0;
+
+    list-style:none;
+}
+
+.insights li {
+    position:relative;
+
+    padding:
+        9px 0 9px 18px;
+
+    font-size:14px;
+    line-height:1.45;
+
+    border-top:
+        1px solid
+        var(--border);
+}
+
+.insights li:first-child {
+    border-top:none;
+    padding-top:0;
+}
+
+.insights li::before {
+    content:"";
+
+    position:absolute;
+
+    left:0;
+    top:15px;
+
+    width:8px;
+    height:8px;
+
+    border-radius:50%;
+
+    background:var(--accent);
+}
+
+.insights li:first-child::before {
+    top:6px;
+}
+
+.insights li.good::before {
+    background:var(--green);
+}
+
+.insights li.warn::before {
+    background:var(--yellow);
+}
+
+.insights li.bad::before {
+    background:var(--red);
+}
+
+.insights strong {
+    font-variant-numeric:
+        tabular-nums;
+}
+
+.stat-table {
+    display:grid;
+
+    grid-template-columns:
+        auto auto;
+
+    margin:0;
+
+    font-size:14px;
+}
+
+.stat-table dt,
+.stat-table dd {
+    margin:0;
+
+    padding:7px 0;
+
+    border-top:
+        1px solid
+        var(--border);
+}
+
+.stat-table dt {
+    color:var(--muted);
+}
+
+.stat-table dd {
+    text-align:right;
+
+    font-weight:bold;
+
+    font-variant-numeric:
+        tabular-nums;
+}
+
+.stat-table dt:first-of-type,
+.stat-table dd:first-of-type {
+    border-top:none;
+}
+
+.chart-head {
+    display:flex;
+
+    flex-wrap:wrap;
+
+    align-items:baseline;
+    justify-content:space-between;
+
+    gap:6px 16px;
+
+    margin-bottom:8px;
+}
+
+.chart-head h3 {
+    margin:0;
+}
+
+.legend {
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:4px 14px;
+
+    color:var(--muted);
+
+    font-size:12px;
+}
+
+.legend span {
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:6px;
+}
+
+.legend .key {
+    display:inline-block;
+}
+
+.key-line {
+    width:16px;
+    height:0;
+
+    border-top:
+        2px solid
+        var(--accent);
+}
+
+.key-mean {
+    width:16px;
+    height:0;
+
+    border-top:
+        2px solid
+        var(--green);
+}
+
+.key-limit {
+    width:16px;
+    height:0;
+
+    border-top:
+        2px dashed
+        var(--muted);
+}
+
+.key-out {
+    width:9px;
+    height:9px;
+
+    border-radius:50%;
+
+    background:var(--red);
+}
+
+.key-bar {
+    width:11px;
+    height:11px;
+
+    border-radius:2px;
+
+    background:var(--accent);
+}
+
+.chart svg {
+    display:block;
+
+    width:100%;
+
+    overflow:visible;
+}
+
+.chart text {
+    fill:var(--muted);
+
+    font-family:Arial,sans-serif;
+    font-size:11px;
+}
+
+.chart .grid {
+    stroke:var(--border);
+    stroke-opacity:.6;
+}
+
+.chart .axis {
+    stroke:var(--border);
+}
+
+.chart .series {
+    fill:none;
+
+    stroke:var(--accent);
+    stroke-width:2;
+
+    stroke-linejoin:round;
+}
+
+.chart .point {
+    fill:var(--accent);
+    stroke:var(--panel2);
+    stroke-width:2;
+}
+
+.chart .point.out {
+    fill:var(--red);
+}
+
+.chart .mean-line {
+    stroke:var(--green);
+    stroke-width:1.5;
+}
+
+.chart .limit-line {
+    stroke:var(--muted);
+    stroke-width:1.2;
+    stroke-dasharray:5 4;
+}
+
+.chart .bar {
+    fill:var(--accent);
+}
+
+.chart .bar-label {
+    fill:var(--text);
+
+    font-weight:bold;
+}
+
+.chart-note {
+    margin:10px 0 0 0;
+
+    color:var(--muted);
+
+    font-size:12px;
+    line-height:1.45;
+}
+
+
+/* =====================================================
    MOBILE
 ===================================================== */
 
@@ -488,6 +1043,33 @@ tbody tr:first-child {
 
     .lap-dashboard {
         grid-template-columns:1fr;
+    }
+
+    .key-stats {
+        grid-template-columns:
+            repeat(2,1fr);
+    }
+
+    .key-stats .metric-value {
+        font-size:22px;
+    }
+
+    .analysis-grid {
+        grid-template-columns:1fr;
+    }
+
+    .analysis-card {
+        padding:14px;
+    }
+
+    .details-panel .details-toggle {
+        padding:
+            12px 14px;
+    }
+
+    .details-panel .study-info {
+        padding:
+            4px 14px 14px 14px;
     }
 
     .container {
@@ -512,10 +1094,74 @@ tbody tr:first-child {
 
 
 <!-- ==================================================
-     STUDY INFORMATION
+     TABS
 ================================================== -->
 
-<div class="study-info">
+<div class="tabs" role="tablist">
+
+    <button
+        id="tabTimer"
+        class="tab active"
+        role="tab"
+        aria-selected="true"
+        aria-controls="timerView"
+        onclick="showTab('timer')"
+    >
+        Timer
+    </button>
+
+    <button
+        id="tabAnalysis"
+        class="tab"
+        role="tab"
+        aria-selected="false"
+        aria-controls="analysisView"
+        onclick="showTab('analysis')"
+    >
+        Analysis
+    </button>
+
+</div>
+
+
+<div id="timerView" role="tabpanel">
+
+
+<!-- ==================================================
+     STUDY INFORMATION (COLLAPSIBLE)
+================================================== -->
+
+<section
+    id="detailsPanel"
+    class="details-panel"
+>
+
+<button
+    id="detailsToggle"
+    class="details-toggle"
+    aria-expanded="true"
+    aria-controls="studyInfo"
+    onclick="toggleDetails()"
+>
+    <span class="details-title">
+        Study Details
+    </span>
+
+    <span
+        id="detailsSummary"
+        class="details-summary"
+    ></span>
+
+    <span
+        class="details-chevron"
+        aria-hidden="true"
+    ></span>
+</button>
+
+<div
+    id="studyInfo"
+    class="study-info"
+>
 
     <div class="form-group">
 
@@ -577,6 +1223,8 @@ tbody tr:first-child {
     </div>
 
 </div>
+
+</section>
 
 
 <!-- ==================================================
@@ -653,12 +1301,20 @@ tbody tr:first-child {
     </button>
 
 
-    <button onclick="exportTXT()">
+    <button
+        class="export-button"
+        onclick="exportTXT()"
+        hidden
+    >
         Export TXT
     </button>
 
 
-    <button onclick="exportExcel()">
+    <button
+        class="export-button"
+        onclick="exportExcel()"
+        hidden
+    >
         Export Excel
     </button>
 
@@ -680,6 +1336,15 @@ tbody tr:first-child {
 
 
 <div id="importMessage"></div>
+
+
+<div
+    id="exportNote"
+    class="hotkey-note"
+    hidden
+>
+    Export options appear once the study is stopped.
+</div>
 
 
 <div class="hotkey-note">
@@ -814,8 +1479,138 @@ tbody tr:first-child {
 </div>
 
 
+</div>
+<!-- end timerView -->
+
+
+<!-- ==================================================
+     ANALYSIS VIEW
+================================================== -->
+
+<div
+    id="analysisView"
+    class="analysis"
+    role="tabpanel"
+    hidden
+>
+
+    <div class="analysis-header">
+
+        <h2 id="analysisTitle">
+            Study Analysis
+        </h2>
+
+        <div
+            id="analysisSubtitle"
+            class="analysis-subtitle"
+        ></div>
+
+    </div>
+
+
+    <div
+        id="analysisEmpty"
+        class="empty-state"
+    >
+        Record at least 2 laps to see statistics, insights and charts.
+    </div>
+
+
+    <div
+        id="analysisContent"
+        hidden
+    >
+
+        <div
+            id="keyStats"
+            class="key-stats"
+        ></div>
+
+
+        <div class="analysis-grid">
+
+            <section class="analysis-card">
+
+                <h3>Insights</h3>
+
+                <ul
+                    id="insightsList"
+                    class="insights"
+                ></ul>
+
+            </section>
+
+
+            <section class="analysis-card">
+
+                <h3>Detailed Statistics</h3>
+
+                <dl
+                    id="statTable"
+                    class="stat-table"
+                ></dl>
+
+            </section>
+
+        </div>
+
+
+        <section class="analysis-card">
+
+            <div class="chart-head">
+
+                <h3>Lap Times</h3>
+
+                <div class="legend">
+                    <span><i class="key key-line"></i>Lap time</span>
+                    <span><i class="key key-mean"></i>Mean</span>
+                    <span><i class="key key-limit"></i>Control limits</span>
+                    <span><i class="key key-out"></i>Outside limits</span>
+                </div>
+
+            </div>
+
+            <div
+                id="trendChart"
+                class="chart"
+            ></div>
+
+            <p class="chart-note">
+                Control limits use the individuals chart method
+                (mean &plusmn; 2.66 &times; average moving range).
+                Laps outside them likely had a special cause worth checking.
+            </p>
+
+        </section>
+
+
+        <section class="analysis-card">
+
+            <div class="chart-head">
+
+                <h3>Distribution</h3>
+
+                <div class="legend">
+                    <span><i class="key key-bar"></i>Laps per range</span>
+                    <span><i class="key key-mean"></i>Mean</span>
+                </div>
+
+            </div>
+
+            <div
+                id="histChart"
+                class="chart"
+            ></div>
+
+        </section>
+
+    </div>
+
+</div>
+
+
 <div class="app-version">
-    v8
+    v9
 </div>
 
 </div>
@@ -1113,6 +1908,9 @@ function startTimer() {
         "RUNNING";
 
 
+    updateExportVisibility();
+
+
     updateTimerDisplay();
 }
 
@@ -1240,6 +2038,11 @@ function stopTimer() {
         "STOPPED";
 
 
+    updateExportVisibility();
+
+    refreshAnalysis();
+
+
     updateTimerDisplay();
 }
 
@@ -1297,6 +2100,11 @@ function resetTimer() {
 
 
     clearImportMessage();
+
+
+    updateExportVisibility();
+
+    refreshAnalysis();
 
 
     updateTimerDisplay();
@@ -1979,6 +2787,11 @@ function updateStatistics() {
             "Total Laps: 0";
 
 
+    updateExportVisibility();
+
+    refreshAnalysis();
+
+
         return;
     }
 
@@ -2038,6 +2851,10 @@ function updateStatistics() {
         "Total Laps: "
         +
         laps.length;
+
+    updateExportVisibility();
+
+    refreshAnalysis();
 }
 
 
@@ -2675,6 +3492,8 @@ function parseImportedTXT(
 
     $("status").textContent =
         "HISTORIC STUDY LOADED";
+
+    updateDetailsSummary();
 
 
     rebuildLapTable();
@@ -3476,6 +4295,1359 @@ function loadTheme() {
 
 
 /* =========================================================
+   TABS
+========================================================= */
+
+let activeTab = "timer";
+
+
+function showTab(name) {
+
+    activeTab = name;
+
+    const analysis =
+        name === "analysis";
+
+    $("timerView").hidden =
+        analysis;
+
+    $("analysisView").hidden =
+        !analysis;
+
+    $("tabTimer").classList.toggle(
+        "active",
+        !analysis
+    );
+
+    $("tabAnalysis").classList.toggle(
+        "active",
+        analysis
+    );
+
+    $("tabTimer").setAttribute(
+        "aria-selected",
+        String(!analysis)
+    );
+
+    $("tabAnalysis").setAttribute(
+        "aria-selected",
+        String(analysis)
+    );
+
+    $("tabTimer").blur();
+    $("tabAnalysis").blur();
+
+    refreshAnalysis();
+}
+
+
+/* =========================================================
+   COLLAPSIBLE STUDY DETAILS
+========================================================= */
+
+const detailFieldIds = [
+    "studyName",
+    "machine",
+    "partNumber",
+    "operator"
+];
+
+
+function setDetailsCollapsed(collapsed) {
+
+    $("detailsPanel").classList.toggle(
+        "collapsed",
+        collapsed
+    );
+
+    $("detailsToggle").setAttribute(
+        "aria-expanded",
+        String(!collapsed)
+    );
+
+    try {
+        localStorage.setItem(
+            "timeStudyDetailsCollapsed",
+            collapsed ? "1" : "0"
+        );
+    } catch (error) {}
+}
+
+
+function toggleDetails() {
+
+    setDetailsCollapsed(
+        !$("detailsPanel")
+        .classList
+        .contains("collapsed")
+    );
+
+    $("detailsToggle").blur();
+}
+
+
+function updateDetailsSummary() {
+
+    const parts =
+        detailFieldIds
+        .map(fieldValue)
+        .filter(Boolean);
+
+    $("detailsSummary").textContent =
+        parts.length
+        ? parts.join("  ·  ")
+        : "No details entered";
+}
+
+
+function initDetailsPanel() {
+
+    let collapsed = false;
+
+    try {
+        collapsed =
+            localStorage.getItem(
+                "timeStudyDetailsCollapsed"
+            ) === "1";
+    } catch (error) {}
+
+    setDetailsCollapsed(collapsed);
+
+    detailFieldIds.forEach(
+        function(id) {
+            $(id).addEventListener(
+                "input",
+                updateDetailsSummary
+            );
+        }
+    );
+
+    updateDetailsSummary();
+}
+
+
+/* =========================================================
+   EXPORT VISIBILITY
+
+   Export is offered once the study is stopped
+   (not merely paused), or when a finished
+   historical study has been imported.
+========================================================= */
+
+function updateExportVisibility() {
+
+    const available =
+        stopped
+        ||
+        (
+            !studyStarted
+            &&
+            laps.length > 0
+        );
+
+    document
+    .querySelectorAll(".export-button")
+    .forEach(
+        function(button) {
+            button.hidden = !available;
+        }
+    );
+
+    $("exportNote").hidden =
+        available
+        ||
+        !studyStarted;
+}
+
+
+/* =========================================================
+   STATISTICS ENGINE
+========================================================= */
+
+function quantile(sorted, q) {
+
+    const position =
+        (sorted.length - 1) * q;
+
+    const lower =
+        Math.floor(position);
+
+    const upper =
+        Math.ceil(position);
+
+    return (
+        sorted[lower]
+        +
+        (
+            sorted[upper]
+            -
+            sorted[lower]
+        )
+        *
+        (position - lower)
+    );
+}
+
+
+/*
+    Two-sided 95% Student t critical values
+    by degrees of freedom (1 to 30).
+*/
+
+const T95 = [
+    12.706, 4.303, 3.182, 2.776, 2.571,
+    2.447, 2.365, 2.306, 2.262, 2.228,
+    2.201, 2.179, 2.160, 2.145, 2.131,
+    2.120, 2.110, 2.101, 2.093, 2.086,
+    2.080, 2.074, 2.069, 2.064, 2.060,
+    2.056, 2.052, 2.048, 2.045, 2.042
+];
+
+
+function tCritical(df) {
+
+    if (df <= 30) {
+        return T95[df - 1];
+    }
+
+    if (df <= 60) {
+        return 2.000;
+    }
+
+    if (df <= 120) {
+        return 1.980;
+    }
+
+    return 1.960;
+}
+
+
+function computeStats(values) {
+
+    const n = values.length;
+
+    const sorted =
+        values
+        .slice()
+        .sort(
+            function(a, b) {
+                return a - b;
+            }
+        );
+
+    const total =
+        values.reduce(
+            function(sum, v) {
+                return sum + v;
+            },
+            0
+        );
+
+    const mean = total / n;
+
+    const variance =
+        values.reduce(
+            function(sum, v) {
+                return sum + (v - mean) * (v - mean);
+            },
+            0
+        )
+        /
+        (n - 1);
+
+    const sd = Math.sqrt(variance);
+
+    const q1 = quantile(sorted, 0.25);
+    const median = quantile(sorted, 0.5);
+    const q3 = quantile(sorted, 0.75);
+
+    /*
+        Individuals (I-MR) control chart limits.
+    */
+
+    let movingRangeTotal = 0;
+
+    for (let i = 1; i < n; i++) {
+        movingRangeTotal +=
+            Math.abs(values[i] - values[i - 1]);
+    }
+
+    const averageMovingRange =
+        movingRangeTotal / (n - 1);
+
+    const ucl =
+        mean + 2.66 * averageMovingRange;
+
+    const lcl =
+        Math.max(
+            0,
+            mean - 2.66 * averageMovingRange
+        );
+
+    /*
+        Least squares trend: lap time vs lap number.
+    */
+
+    const xMean = (n + 1) / 2;
+
+    let sxy = 0;
+    let sxx = 0;
+
+    values.forEach(
+        function(v, i) {
+            const dx = (i + 1) - xMean;
+            sxy += dx * (v - mean);
+            sxx += dx * dx;
+        }
+    );
+
+    const slope =
+        sxx > 0 ? sxy / sxx : 0;
+
+    const standardError =
+        sd / Math.sqrt(n);
+
+    const ciHalfWidth =
+        tCritical(n - 1) * standardError;
+
+    /*
+        Laps required for +/-5% accuracy at
+        95% confidence (standard work
+        measurement sample size formula).
+    */
+
+    const requiredLaps =
+        mean > 0
+        ? Math.ceil(
+            Math.pow(
+                (1.96 * sd) / (0.05 * mean),
+                2
+            )
+        )
+        : 0;
+
+    return {
+        n: n,
+        total: total,
+        mean: mean,
+        median: median,
+        variance: variance,
+        sd: sd,
+        cv: mean > 0 ? (sd / mean) * 100 : 0,
+        min: sorted[0],
+        max: sorted[n - 1],
+        range: sorted[n - 1] - sorted[0],
+        q1: q1,
+        q3: q3,
+        iqr: q3 - q1,
+        standardError: standardError,
+        ciLow: mean - ciHalfWidth,
+        ciHigh: mean + ciHalfWidth,
+        averageMovingRange: averageMovingRange,
+        ucl: ucl,
+        lcl: lcl,
+        slope: slope,
+        requiredLaps: requiredLaps,
+        cyclesPerHour: mean > 0 ? 3600 / mean : 0
+    };
+}
+
+
+/* =========================================================
+   FORMATTING
+========================================================= */
+
+function fmt(value, digits) {
+
+    return Number(value).toFixed(
+        digits === undefined ? 3 : digits
+    );
+}
+
+
+function fmtDuration(seconds) {
+
+    const total = Math.round(seconds);
+
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+
+    if (h > 0) {
+        return h + "h " + m + "m " + s + "s";
+    }
+
+    if (m > 0) {
+        return m + "m " + s + "s";
+    }
+
+    return (
+        Number(seconds).toFixed(1)
+        + "s"
+    );
+}
+
+
+function escapeHTML(text) {
+
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+
+function lapList(items) {
+
+    const names =
+        items.map(
+            function(item) {
+                return (
+                    "Lap " + item.lapNumber
+                    + " (" + fmt(item.lapTime, 2) + "s)"
+                );
+            }
+        );
+
+    if (names.length <= 1) {
+        return names.join("");
+    }
+
+    return (
+        names.slice(0, -1).join(", ")
+        + " and "
+        + names[names.length - 1]
+    );
+}
+
+
+/* =========================================================
+   INSIGHTS
+========================================================= */
+
+function buildInsights(stats) {
+
+    const insights = [];
+
+    const add =
+        function(level, html) {
+            insights.push({
+                level: level,
+                html: html
+            });
+        };
+
+
+    /* Consistency */
+
+    const cv = stats.cv;
+
+    if (cv < 10) {
+
+        add(
+            "good",
+            "<strong>Very consistent.</strong> Lap times vary by "
+            + "<strong>" + fmt(cv, 1) + "%</strong> of the mean "
+            + "(coefficient of variation), which suggests a stable, well-defined method."
+        );
+
+    } else if (cv < 20) {
+
+        add(
+            "warn",
+            "<strong>Moderate variation.</strong> Lap times vary by "
+            + "<strong>" + fmt(cv, 1) + "%</strong> of the mean. "
+            + "Look for steps that are done differently from cycle to cycle."
+        );
+
+    } else {
+
+        add(
+            "bad",
+            "<strong>High variation.</strong> Lap times vary by "
+            + "<strong>" + fmt(cv, 1) + "%</strong> of the mean. "
+            + "The process may not be standardized, or some laps include extra work or delays."
+        );
+    }
+
+
+    /* Special-cause laps */
+
+    const outside =
+        laps.filter(
+            function(lap) {
+                return (
+                    lap.lapTime > stats.ucl
+                    ||
+                    lap.lapTime < stats.lcl
+                );
+            }
+        );
+
+    if (outside.length > 0) {
+
+        const noted =
+            outside.filter(
+                function(lap) {
+                    return lap.notes.trim() !== "";
+                }
+            );
+
+        let html =
+            "<strong>"
+            + outside.length
+            + (outside.length === 1 ? " lap falls" : " laps fall")
+            + " outside the control limits:</strong> "
+            + escapeHTML(lapList(outside.slice(0, 5)))
+            + (outside.length > 5 ? " and others" : "")
+            + ". These likely had a special cause (interruption, rework, missed step).";
+
+        if (noted.length > 0) {
+
+            html +=
+                " Notes: "
+                + noted
+                .slice(0, 3)
+                .map(
+                    function(lap) {
+                        return (
+                            "Lap " + lap.lapNumber
+                            + " “" + escapeHTML(lap.notes.trim()) + "”"
+                        );
+                    }
+                )
+                .join("; ")
+                + ".";
+        }
+
+        add("bad", html);
+
+    } else if (stats.n >= 5) {
+
+        add(
+            "good",
+            "<strong>No laps outside the control limits.</strong> "
+            + "The process appears to be in statistical control."
+        );
+    }
+
+
+    /* Trend */
+
+    if (stats.n >= 5 && stats.mean > 0) {
+
+        const change =
+            stats.slope * (stats.n - 1);
+
+        const changePercent =
+            (change / stats.mean) * 100;
+
+        if (Math.abs(changePercent) >= 10) {
+
+            const faster = change < 0;
+
+            add(
+                "warn",
+                "<strong>Lap times are trending "
+                + (faster ? "down" : "up")
+                + ".</strong> About <strong>"
+                + fmt(Math.abs(stats.slope), 2)
+                + "s per lap</strong>, or "
+                + fmt(Math.abs(changePercent), 0)
+                + "% across the study. "
+                + (
+                    faster
+                    ? "This often reflects a learning curve; a standard based on early laps may be too loose."
+                    : "This may indicate fatigue, tool wear or growing interruptions."
+                )
+            );
+
+        } else {
+
+            add(
+                "good",
+                "<strong>No meaningful trend.</strong> Lap times stay level across the study "
+                + "(drift of " + fmt(Math.abs(changePercent), 0) + "% from first to last lap)."
+            );
+        }
+    }
+
+
+    /* First half vs second half */
+
+    if (stats.n >= 6 && stats.mean > 0) {
+
+        const half =
+            Math.floor(stats.n / 2);
+
+        const average =
+            function(list) {
+                return (
+                    list.reduce(
+                        function(sum, lap) {
+                            return sum + lap.lapTime;
+                        },
+                        0
+                    )
+                    / list.length
+                );
+            };
+
+        const first =
+            average(laps.slice(0, half));
+
+        const second =
+            average(laps.slice(stats.n - half));
+
+        const diff =
+            ((second - first) / first) * 100;
+
+        if (Math.abs(diff) >= 5) {
+
+            add(
+                "info",
+                "The second half of the study averaged <strong>"
+                + fmt(second, 2) + "s</strong> versus <strong>"
+                + fmt(first, 2) + "s</strong> in the first half ("
+                + (diff > 0 ? "+" : "")
+                + fmt(diff, 1) + "%)."
+            );
+        }
+    }
+
+
+    /* Fastest and slowest */
+
+    let fastest = laps[0];
+    let slowest = laps[0];
+
+    laps.forEach(
+        function(lap) {
+            if (lap.lapTime < fastest.lapTime) {
+                fastest = lap;
+            }
+            if (lap.lapTime > slowest.lapTime) {
+                slowest = lap;
+            }
+        }
+    );
+
+    add(
+        "info",
+        "Fastest was <strong>Lap " + fastest.lapNumber
+        + "</strong> at <strong>" + fmt(fastest.lapTime, 2)
+        + "s</strong>; slowest was <strong>Lap " + slowest.lapNumber
+        + "</strong> at <strong>" + fmt(slowest.lapTime, 2)
+        + "s</strong>"
+        + (
+            fastest.lapTime > 0
+            ? " (" + fmt(slowest.lapTime / fastest.lapTime, 1) + "× spread)."
+            : "."
+        )
+    );
+
+
+    /* Throughput */
+
+    if (stats.mean > 0) {
+
+        add(
+            "info",
+            "At the mean lap time, expect about <strong>"
+            + fmt(stats.cyclesPerHour, 1)
+            + " cycles per hour</strong> ("
+            + fmt(stats.cyclesPerHour * 8, 0)
+            + " per 8-hour shift) before allowances."
+        );
+    }
+
+
+    /* Sample size */
+
+    if (stats.mean > 0) {
+
+        if (stats.n >= stats.requiredLaps) {
+
+            add(
+                "good",
+                "<strong>Sample size is sufficient.</strong> "
+                + stats.n + " laps meets the "
+                + Math.max(stats.requiredLaps, 1)
+                + " needed for ±5% accuracy at 95% confidence."
+            );
+
+        } else {
+
+            add(
+                "warn",
+                "<strong>More laps recommended.</strong> About <strong>"
+                + stats.requiredLaps
+                + "</strong> laps are needed for ±5% accuracy at 95% confidence; "
+                + "record roughly <strong>"
+                + (stats.requiredLaps - stats.n)
+                + " more</strong>."
+            );
+        }
+    }
+
+    return insights;
+}
+
+
+/* =========================================================
+   CHART HELPERS
+========================================================= */
+
+function niceStep(range, targetTicks) {
+
+    const rough =
+        range / Math.max(targetTicks, 1);
+
+    const power =
+        Math.pow(10, Math.floor(Math.log10(rough)));
+
+    const fraction =
+        rough / power;
+
+    let nice;
+
+    if (fraction <= 1) {
+        nice = 1;
+    } else if (fraction <= 2) {
+        nice = 2;
+    } else if (fraction <= 2.5) {
+        nice = 2.5;
+    } else if (fraction <= 5) {
+        nice = 5;
+    } else {
+        nice = 10;
+    }
+
+    return nice * power;
+}
+
+
+function niceScale(min, max, targetTicks) {
+
+    if (max - min < 1e-9) {
+        const pad =
+            Math.max(Math.abs(max) * 0.1, 1);
+        min -= pad;
+        max += pad;
+    }
+
+    const step =
+        niceStep(max - min, targetTicks);
+
+    const low =
+        Math.floor(min / step) * step;
+
+    const high =
+        Math.ceil(max / step) * step;
+
+    const ticks = [];
+
+    for (
+        let v = low;
+        v <= high + step / 2;
+        v += step
+    ) {
+        ticks.push(
+            Math.round(v / step) * step
+        );
+    }
+
+    return {
+        min: low,
+        max: high,
+        ticks: ticks,
+        step: step
+    };
+}
+
+
+function tickLabel(value, step) {
+
+    let decimals = 0;
+
+    while (
+        decimals < 3
+        &&
+        Math.abs(
+            step * Math.pow(10, decimals)
+            -
+            Math.round(step * Math.pow(10, decimals))
+        ) > 1e-6
+    ) {
+        decimals++;
+    }
+
+    return value.toFixed(decimals);
+}
+
+
+function chartSize(container) {
+
+    const width =
+        Math.max(
+            container.clientWidth,
+            260
+        );
+
+    return {
+        width: width,
+        height: width < 500 ? 220 : 280,
+        compact: width < 500
+    };
+}
+
+
+/* =========================================================
+   LAP TIME CONTROL CHART
+========================================================= */
+
+function renderTrendChart(stats) {
+
+    const container = $("trendChart");
+
+    const size = chartSize(container);
+
+    const pad = {
+        top: 14,
+        right: size.compact ? 34 : 44,
+        bottom: 34,
+        left: 46
+    };
+
+    const plotWidth =
+        size.width - pad.left - pad.right;
+
+    const plotHeight =
+        size.height - pad.top - pad.bottom;
+
+    const values =
+        laps.map(
+            function(lap) {
+                return lap.lapTime;
+            }
+        );
+
+    const yScale =
+        niceScale(
+            Math.min(stats.min, stats.lcl),
+            Math.max(stats.max, stats.ucl),
+            5
+        );
+
+    yScale.min = Math.max(0, yScale.min);
+
+    const x =
+        function(i) {
+            return (
+                pad.left
+                + (
+                    values.length === 1
+                    ? plotWidth / 2
+                    : (i / (values.length - 1)) * plotWidth
+                )
+            );
+        };
+
+    const y =
+        function(v) {
+            return (
+                pad.top
+                + plotHeight
+                - (
+                    (v - yScale.min)
+                    / (yScale.max - yScale.min)
+                )
+                * plotHeight
+            );
+        };
+
+    let svg =
+        '<svg viewBox="0 0 ' + size.width + " " + size.height
+        + '" height="' + size.height
+        + '" role="img" aria-label="Lap time control chart">';
+
+
+    /* Grid and y axis */
+
+    yScale.ticks.forEach(
+        function(t) {
+            if (t < yScale.min - 1e-9) {
+                return;
+            }
+            const yy = y(t);
+            svg +=
+                '<line class="grid" x1="' + pad.left
+                + '" x2="' + (pad.left + plotWidth)
+                + '" y1="' + yy + '" y2="' + yy + '"/>'
+                + '<text x="' + (pad.left - 8) + '" y="' + (yy + 4)
+                + '" text-anchor="end">' + tickLabel(t, yScale.step) + "</text>";
+        }
+    );
+
+    svg +=
+        '<text x="12" y="' + (pad.top + plotHeight / 2)
+        + '" text-anchor="middle" transform="rotate(-90 12 '
+        + (pad.top + plotHeight / 2) + ')">Seconds</text>';
+
+
+    /* X axis ticks: lap numbers */
+
+    const xStep =
+        Math.max(
+            1,
+            Math.ceil(
+                values.length
+                / (size.compact ? 6 : 12)
+            )
+        );
+
+    for (let i = 0; i < values.length; i += xStep) {
+        svg +=
+            '<text x="' + x(i) + '" y="' + (pad.top + plotHeight + 18)
+            + '" text-anchor="middle">' + (i + 1) + "</text>";
+    }
+
+    if ((values.length - 1) % xStep !== 0) {
+        svg +=
+            '<text x="' + x(values.length - 1) + '" y="'
+            + (pad.top + plotHeight + 18)
+            + '" text-anchor="middle">' + values.length + "</text>";
+    }
+
+    svg +=
+        '<text x="' + (pad.left + plotWidth / 2) + '" y="' + (size.height - 2)
+        + '" text-anchor="middle">Lap</text>';
+
+
+    /* Mean and control limits */
+
+    const refLine =
+        function(cls, value, label) {
+            const yy = y(value);
+            return (
+                '<line class="' + cls + '" x1="' + pad.left
+                + '" x2="' + (pad.left + plotWidth)
+                + '" y1="' + yy + '" y2="' + yy + '"/>'
+                + '<text x="' + (pad.left + plotWidth + 4) + '" y="' + (yy + 4)
+                + '">' + label + "</text>"
+            );
+        };
+
+    svg += refLine("limit-line", stats.ucl, "UCL");
+
+    if (stats.lcl > yScale.min) {
+        svg += refLine("limit-line", stats.lcl, "LCL");
+    }
+
+    svg += refLine("mean-line", stats.mean, "Mean");
+
+
+    /* Series */
+
+    svg +=
+        '<polyline class="series" points="'
+        + values
+        .map(
+            function(v, i) {
+                return x(i) + "," + y(v);
+            }
+        )
+        .join(" ")
+        + '"/>';
+
+    const radius =
+        values.length > 60 ? 2.5 : 4;
+
+    values.forEach(
+        function(v, i) {
+            const out =
+                v > stats.ucl || v < stats.lcl;
+            svg +=
+                '<circle class="point' + (out ? " out" : "")
+                + '" cx="' + x(i) + '" cy="' + y(v)
+                + '" r="' + (out ? radius + 1 : radius) + '">'
+                + "<title>Lap " + (i + 1) + ": " + fmt(v) + "s</title></circle>";
+        }
+    );
+
+    svg += "</svg>";
+
+    container.innerHTML = svg;
+}
+
+
+/* =========================================================
+   DISTRIBUTION HISTOGRAM
+========================================================= */
+
+function renderHistogram(stats) {
+
+    const container = $("histChart");
+
+    const size = chartSize(container);
+
+    const pad = {
+        top: 20,
+        right: 16,
+        bottom: 34,
+        left: 46
+    };
+
+    const plotWidth =
+        size.width - pad.left - pad.right;
+
+    const plotHeight =
+        size.height - pad.top - pad.bottom;
+
+    /*
+        Bin count scaled from Sturges' rule,
+        on a "nice" bin width.
+    */
+
+    const targetBins =
+        Math.min(
+            16,
+            Math.max(
+                5,
+                Math.round(
+                    1.6 * (Math.log2(stats.n) + 1)
+                )
+            )
+        );
+
+    const xScale =
+        niceScale(stats.min, stats.max, targetBins);
+
+    if (xScale.max <= stats.max) {
+        xScale.max += xScale.step;
+        xScale.ticks.push(xScale.max);
+    }
+
+    const binCount =
+        Math.round(
+            (xScale.max - xScale.min) / xScale.step
+        );
+
+    const counts =
+        new Array(binCount).fill(0);
+
+    laps.forEach(
+        function(lap) {
+            let index =
+                Math.floor(
+                    (lap.lapTime - xScale.min) / xScale.step
+                );
+            index =
+                Math.min(binCount - 1, Math.max(0, index));
+            counts[index]++;
+        }
+    );
+
+    const maxCount =
+        Math.max.apply(null, counts);
+
+    const yScale =
+        niceScale(0, maxCount, 4);
+
+    yScale.step = Math.max(1, yScale.step);
+
+    yScale.ticks =
+        yScale.ticks.filter(
+            function(t) {
+                return Number.isInteger(t);
+            }
+        );
+
+    const x =
+        function(v) {
+            return (
+                pad.left
+                + (
+                    (v - xScale.min)
+                    / (xScale.max - xScale.min)
+                )
+                * plotWidth
+            );
+        };
+
+    const y =
+        function(v) {
+            return (
+                pad.top + plotHeight
+                - (v / yScale.max) * plotHeight
+            );
+        };
+
+    let svg =
+        '<svg viewBox="0 0 ' + size.width + " " + size.height
+        + '" height="' + size.height
+        + '" role="img" aria-label="Lap time distribution histogram">';
+
+    yScale.ticks.forEach(
+        function(t) {
+            const yy = y(t);
+            svg +=
+                '<line class="grid" x1="' + pad.left
+                + '" x2="' + (pad.left + plotWidth)
+                + '" y1="' + yy + '" y2="' + yy + '"/>'
+                + '<text x="' + (pad.left - 8) + '" y="' + (yy + 4)
+                + '" text-anchor="end">' + t + "</text>";
+        }
+    );
+
+    svg +=
+        '<text x="12" y="' + (pad.top + plotHeight / 2)
+        + '" text-anchor="middle" transform="rotate(-90 12 '
+        + (pad.top + plotHeight / 2) + ')">Laps</text>';
+
+    const barGap = 2;
+
+    counts.forEach(
+        function(count, i) {
+
+            const left =
+                x(xScale.min + i * xScale.step);
+
+            const right =
+                x(xScale.min + (i + 1) * xScale.step);
+
+            const top = y(count);
+
+            const label =
+                tickLabel(xScale.min + i * xScale.step, xScale.step)
+                + "–"
+                + tickLabel(xScale.min + (i + 1) * xScale.step, xScale.step)
+                + "s: " + count + (count === 1 ? " lap" : " laps");
+
+            if (count > 0) {
+                svg +=
+                    '<rect class="bar" x="' + (left + barGap / 2)
+                    + '" y="' + top
+                    + '" width="' + Math.max(1, right - left - barGap)
+                    + '" height="' + (pad.top + plotHeight - top)
+                    + '" rx="2"><title>' + label + "</title></rect>"
+                    + '<text class="bar-label" x="' + ((left + right) / 2)
+                    + '" y="' + (top - 5)
+                    + '" text-anchor="middle">' + count + "</text>";
+            }
+        }
+    );
+
+    const labelEvery =
+        Math.max(
+            1,
+            Math.ceil(
+                xScale.ticks.length
+                / (size.compact ? 5 : 10)
+            )
+        );
+
+    xScale.ticks.forEach(
+        function(t, i) {
+            if (i % labelEvery !== 0) {
+                return;
+            }
+            svg +=
+                '<text x="' + x(t) + '" y="' + (pad.top + plotHeight + 18)
+                + '" text-anchor="middle">' + tickLabel(t, xScale.step) + "</text>";
+        }
+    );
+
+    svg +=
+        '<line class="axis" x1="' + pad.left + '" x2="' + (pad.left + plotWidth)
+        + '" y1="' + (pad.top + plotHeight) + '" y2="' + (pad.top + plotHeight) + '"/>';
+
+    const meanX = x(stats.mean);
+
+    svg +=
+        '<line class="mean-line" x1="' + meanX + '" x2="' + meanX
+        + '" y1="' + pad.top + '" y2="' + (pad.top + plotHeight) + '"/>';
+
+    svg +=
+        '<text x="' + (pad.left + plotWidth / 2) + '" y="' + (size.height - 2)
+        + '" text-anchor="middle">Lap time (seconds)</text>';
+
+    svg += "</svg>";
+
+    container.innerHTML = svg;
+}
+
+
+/* =========================================================
+   RENDER ANALYSIS
+========================================================= */
+
+function keyStatCard(label, value, unit, detail) {
+
+    return (
+        '<div class="metric-card">'
+        + '<div class="metric-label">' + label + "</div>"
+        + '<div class="metric-value">' + value
+        + (unit ? '<span class="metric-unit">' + unit + "</span>" : "")
+        + "</div>"
+        + (detail ? '<div class="metric-detail">' + detail + "</div>" : "")
+        + "</div>"
+    );
+}
+
+
+function refreshAnalysis() {
+
+    if (activeTab !== "analysis") {
+        return;
+    }
+
+    const name =
+        fieldValue("studyName");
+
+    $("analysisTitle").textContent =
+        name || "Study Analysis";
+
+    const meta =
+        ["machine", "partNumber", "operator"]
+        .map(fieldValue)
+        .filter(Boolean);
+
+    meta.push(
+        laps.length + (laps.length === 1 ? " lap" : " laps")
+    );
+
+    meta.push(
+        $("status").textContent.trim()
+    );
+
+    $("analysisSubtitle").textContent =
+        meta.join("  ·  ");
+
+    if (laps.length < 2) {
+        $("analysisEmpty").hidden = false;
+        $("analysisContent").hidden = true;
+        return;
+    }
+
+    $("analysisEmpty").hidden = true;
+    $("analysisContent").hidden = false;
+
+    recalculateLaps();
+
+    const stats =
+        computeStats(
+            laps.map(
+                function(lap) {
+                    return lap.lapTime;
+                }
+            )
+        );
+
+
+    /* Key figures */
+
+    $("keyStats").innerHTML =
+        keyStatCard(
+            "Mean",
+            fmt(stats.mean),
+            "s",
+            "95% CI " + fmt(stats.ciLow, 2) + "–" + fmt(stats.ciHigh, 2) + "s"
+        )
+        + keyStatCard(
+            "Median",
+            fmt(stats.median),
+            "s",
+            "IQR " + fmt(stats.q1, 2) + "–" + fmt(stats.q3, 2) + "s"
+        )
+        + keyStatCard(
+            "Std Deviation",
+            fmt(stats.sd),
+            "s",
+            "CV " + fmt(stats.cv, 1) + "%"
+        )
+        + keyStatCard(
+            "Laps",
+            String(stats.n),
+            "",
+            fmtDuration(stats.total) + " total"
+        );
+
+
+    /* Detailed statistics */
+
+    const rows = [
+        ["Count", String(stats.n)],
+        ["Mean", fmt(stats.mean) + " s"],
+        ["Median", fmt(stats.median) + " s"],
+        ["Standard deviation", fmt(stats.sd) + " s"],
+        ["Variance", fmt(stats.variance) + " s²"],
+        ["Coefficient of variation", fmt(stats.cv, 1) + " %"],
+        ["Standard error", fmt(stats.standardError) + " s"],
+        ["95% confidence interval", fmt(stats.ciLow) + " – " + fmt(stats.ciHigh) + " s"],
+        ["Minimum", fmt(stats.min) + " s"],
+        ["Maximum", fmt(stats.max) + " s"],
+        ["Range", fmt(stats.range) + " s"],
+        ["Q1 / Q3", fmt(stats.q1) + " / " + fmt(stats.q3) + " s"],
+        ["Interquartile range", fmt(stats.iqr) + " s"],
+        ["Control limits (LCL / UCL)", fmt(stats.lcl) + " / " + fmt(stats.ucl) + " s"],
+        ["Trend", (stats.slope >= 0 ? "+" : "") + fmt(stats.slope) + " s per lap"],
+        ["Cycles per hour", fmt(stats.cyclesPerHour, 1)],
+        ["Laps needed (±5%, 95%)", String(stats.requiredLaps)],
+        ["Total time", fmtDuration(stats.total)]
+    ];
+
+    $("statTable").innerHTML =
+        rows
+        .map(
+            function(row) {
+                return (
+                    "<dt>" + row[0] + "</dt>"
+                    + "<dd>" + row[1] + "</dd>"
+                );
+            }
+        )
+        .join("");
+
+
+    /* Insights */
+
+    $("insightsList").innerHTML =
+        buildInsights(stats)
+        .map(
+            function(item) {
+                return (
+                    '<li class="' + item.level + '">'
+                    + item.html
+                    + "</li>"
+                );
+            }
+        )
+        .join("");
+
+
+    /* Charts */
+
+    renderTrendChart(stats);
+
+    renderHistogram(stats);
+}
+
+
+let analysisResizeTimer = null;
+
+window.addEventListener(
+    "resize",
+    function() {
+        clearTimeout(analysisResizeTimer);
+        analysisResizeTimer =
+            setTimeout(refreshAnalysis, 150);
+    }
+);
+
+
+/* =========================================================
    KEYBOARD SHORTCUT
 ========================================================= */
 
@@ -3610,6 +5782,10 @@ document.addEventListener(
 ========================================================= */
 
 loadTheme();
+
+initDetailsPanel();
+
+updateExportVisibility();
 
 updateTimerDisplay();
 
