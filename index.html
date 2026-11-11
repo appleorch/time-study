@@ -209,8 +209,22 @@ button {
     cursor:pointer;
 }
 
-button:hover {
-    background:var(--button-hover);
+/*
+    Only apply hover styling on devices that truly hover
+    (mouse/trackpad). On touch screens, :hover "sticks" to
+    the last tapped button, which previously turned the
+    blue Lap button gray after the first tap.
+*/
+@media (hover:hover) {
+
+    button:hover {
+        background:var(--button-hover);
+    }
+
+    .lap-button:hover {
+        background:var(--accent);
+        filter:brightness(1.15);
+    }
 }
 
 .start-button {
@@ -224,6 +238,12 @@ button:hover {
     min-width:120px;
 
     font-size:18px;
+
+    -webkit-tap-highlight-color:transparent;
+}
+
+.lap-button:active {
+    filter:brightness(0.85);
 }
 
 .stop-button {
@@ -652,7 +672,8 @@ tbody tr:first-child {
 
 
 <div class="hotkey-note">
-    Spacebar = Lap when you are not typing in a field
+    Spacebar = Lap when you are not typing in a field.
+    On mobile, either volume button = Lap (where the browser allows it).
 </div>
 
 
@@ -3447,6 +3468,55 @@ document.addEventListener(
     "keydown",
 
     function(event) {
+
+        /*
+            Volume Up / Volume Down = Lap.
+
+            Mobile browsers report the hardware
+            volume buttons with these key values
+            (older ones use the legacy names or
+            keyCodes 174/175, 182/183, 24/25).
+            Works even while a field is focused,
+            since volume buttons never type text.
+        */
+
+        const volumeKeys = [
+            "AudioVolumeUp",
+            "AudioVolumeDown",
+            "VolumeUp",
+            "VolumeDown"
+        ];
+
+        const volumeKeyCodes = [
+            24, 25, 174, 175, 182, 183
+        ];
+
+        if (
+            volumeKeys.includes(event.key)
+            ||
+            volumeKeyCodes.includes(event.keyCode)
+        ) {
+
+            event.preventDefault();
+
+
+            /*
+                Ignore auto-repeat from holding
+                the button down.
+            */
+
+            if (
+                running
+                &&
+                !event.repeat
+            ) {
+
+                recordLap();
+            }
+
+            return;
+        }
+
 
         const activeElement =
             document.activeElement;
