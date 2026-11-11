@@ -1610,7 +1610,7 @@ tbody tr:first-child {
 
 
 <div class="app-version">
-    v9
+    v10
 </div>
 
 </div>
@@ -3847,397 +3847,1204 @@ function exportTXT() {
 function xmlEscape(value) {
 
     return String(value)
-
-    .replace(
-        /&/g,
-        "&amp;"
-    )
-
-    .replace(
-        /</g,
-        "&lt;"
-    )
-
-    .replace(
-        />/g,
-        "&gt;"
-    )
-
-    .replace(
-        /"/g,
-        "&quot;"
-    )
-
-    .replace(
-        /'/g,
-        "&apos;"
-    );
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
 }
 
 
-function excelCell(
-    value,
-    type
-) {
+/* =========================================================
+   ZIP WRITER
 
-    return (
+   Minimal ZIP (stored, no compression) used to
+   package the .xlsx workbook entirely offline.
+========================================================= */
 
-        '<Cell>'
+const CRC32_TABLE = (function() {
 
-        +
-        '<Data ss:Type="'
+    const table = new Uint32Array(256);
 
-        +
-        type
+    for (let n = 0; n < 256; n++) {
 
-        +
-        '">'
+        let c = n;
 
-        +
-        xmlEscape(
-            value
-        )
+        for (let k = 0; k < 8; k++) {
+            c = (c & 1)
+                ? (0xEDB88320 ^ (c >>> 1))
+                : (c >>> 1);
+        }
 
-        +
-        '</Data>'
+        table[n] = c >>> 0;
+    }
 
-        +
-        '</Cell>'
+    return table;
+})();
+
+
+function crc32(bytes) {
+
+    let crc = 0xFFFFFFFF;
+
+    for (let i = 0; i < bytes.length; i++) {
+        crc =
+            CRC32_TABLE[(crc ^ bytes[i]) & 0xFF]
+            ^ (crc >>> 8);
+    }
+
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+
+function buildZip(files, mimeType) {
+
+    const encoder = new TextEncoder();
+
+    const now = new Date();
+
+    const dosTime =
+        (now.getHours() << 11)
+        | (now.getMinutes() << 5)
+        | Math.floor(now.getSeconds() / 2);
+
+    const dosDate =
+        ((now.getFullYear() - 1980) << 9)
+        | ((now.getMonth() + 1) << 5)
+        | now.getDate();
+
+    const localParts = [];
+    const centralParts = [];
+
+    let offset = 0;
+
+    files.forEach(
+        function(file) {
+
+            const name = encoder.encode(file.name);
+            const data = encoder.encode(file.data);
+            const crc = crc32(data);
+
+            const local = new DataView(new ArrayBuffer(30));
+
+            local.setUint32(0, 0x04034B50, true);
+            local.setUint16(4, 20, true);
+            local.setUint16(6, 0x0800, true);
+            local.setUint16(8, 0, true);
+            local.setUint16(10, dosTime, true);
+            local.setUint16(12, dosDate, true);
+            local.setUint32(14, crc, true);
+            local.setUint32(18, data.length, true);
+            local.setUint32(22, data.length, true);
+            local.setUint16(26, name.length, true);
+            local.setUint16(28, 0, true);
+
+            localParts.push(
+                new Uint8Array(local.buffer),
+                name,
+                data
+            );
+
+            const central = new DataView(new ArrayBuffer(46));
+
+            central.setUint32(0, 0x02014B50, true);
+            central.setUint16(4, 20, true);
+            central.setUint16(6, 20, true);
+            central.setUint16(8, 0x0800, true);
+            central.setUint16(10, 0, true);
+            central.setUint16(12, dosTime, true);
+            central.setUint16(14, dosDate, true);
+            central.setUint32(16, crc, true);
+            central.setUint32(20, data.length, true);
+            central.setUint32(24, data.length, true);
+            central.setUint16(28, name.length, true);
+            central.setUint16(30, 0, true);
+            central.setUint16(32, 0, true);
+            central.setUint16(34, 0, true);
+            central.setUint16(36, 0, true);
+            central.setUint32(38, 0, true);
+            central.setUint32(42, offset, true);
+
+            centralParts.push(
+                new Uint8Array(central.buffer),
+                name
+            );
+
+            offset += 30 + name.length + data.length;
+        }
+    );
+
+    const centralSize =
+        centralParts.reduce(
+            function(sum, part) {
+                return sum + part.length;
+            },
+            0
+        );
+
+    const end = new DataView(new ArrayBuffer(22));
+
+    end.setUint32(0, 0x06054B50, true);
+    end.setUint16(4, 0, true);
+    end.setUint16(6, 0, true);
+    end.setUint16(8, files.length, true);
+    end.setUint16(10, files.length, true);
+    end.setUint32(12, centralSize, true);
+    end.setUint32(16, offset, true);
+    end.setUint16(20, 0, true);
+
+    return new Blob(
+        localParts
+        .concat(centralParts)
+        .concat([new Uint8Array(end.buffer)]),
+        { type: mimeType }
     );
 }
 
 
 /* =========================================================
-   OFFLINE EXCEL EXPORT
+   XLSX SHEET HELPERS
+========================================================= */
+
+/*
+    Cell style indexes (see XLSX_STYLES).
+*/
+
+const XS = {
+    normal: 0,
+    header: 1,
+    num3: 2,
+    percent: 3,
+    integer: 4,
+    title: 5,
+    bold: 6,
+    note: 7,
+    num1: 8
+};
+
+
+function columnName(index) {
+
+    let name = "";
+    let n = index + 1;
+
+    while (n > 0) {
+        const m = (n - 1) % 26;
+        name = String.fromCharCode(65 + m) + name;
+        n = Math.floor((n - 1) / 26);
+    }
+
+    return name;
+}
+
+
+/*
+    A cell is { v: value, f: formula, s: style }.
+    Formulas carry a cached value (v) so previews
+    that do not recalculate still show results.
+*/
+
+function xlsxCell(ref, cell) {
+
+    if (!cell) {
+        return "";
+    }
+
+    const style =
+        cell.s ? ' s="' + cell.s + '"' : "";
+
+    const value = cell.v;
+
+    const hasNumber =
+        typeof value === "number"
+        && Number.isFinite(value);
+
+    if (cell.f !== undefined) {
+
+        if (typeof value === "string") {
+            return (
+                '<c r="' + ref + '"' + style + ' t="str">'
+                + "<f>" + xmlEscape(cell.f) + "</f>"
+                + "<v>" + xmlEscape(value) + "</v></c>"
+            );
+        }
+
+        return (
+            '<c r="' + ref + '"' + style + ">"
+            + "<f>" + xmlEscape(cell.f) + "</f>"
+            + (hasNumber ? "<v>" + value + "</v>" : "")
+            + "</c>"
+        );
+    }
+
+    if (typeof value === "number") {
+        return hasNumber
+            ? '<c r="' + ref + '"' + style + "><v>" + value + "</v></c>"
+            : "";
+    }
+
+    if (value === undefined || value === null || value === "") {
+        return style
+            ? '<c r="' + ref + '"' + style + "/>"
+            : "";
+    }
+
+    return (
+        '<c r="' + ref + '"' + style + ' t="inlineStr">'
+        + '<is><t xml:space="preserve">' + xmlEscape(value) + "</t></is></c>"
+    );
+}
+
+
+function xlsxSheet(options) {
+
+    const rows = options.rows || [];
+
+    let xml =
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+        + ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+
+    xml +=
+        '<sheetViews><sheetView workbookViewId="0"'
+        + (options.selected ? ' tabSelected="1"' : "")
+        + (options.hideGrid ? ' showGridLines="0"' : "")
+        + ">"
+        + (
+            options.freezeHeader
+            ? '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>'
+              + '<selection pane="bottomLeft" activeCell="A2" sqref="A2"/>'
+            : ""
+        )
+        + "</sheetView></sheetViews>";
+
+    if (options.widths) {
+        xml +=
+            "<cols>"
+            + options.widths
+            .map(
+                function(width, i) {
+                    return (
+                        '<col min="' + (i + 1) + '" max="' + (i + 1)
+                        + '" width="' + width + '" customWidth="1"/>'
+                    );
+                }
+            )
+            .join("")
+            + "</cols>";
+    }
+
+    xml += "<sheetData>";
+
+    rows.forEach(
+        function(row, r) {
+
+            if (!row || row.length === 0) {
+                return;
+            }
+
+            xml += '<row r="' + (r + 1) + '">';
+
+            row.forEach(
+                function(cell, c) {
+                    xml += xlsxCell(columnName(c) + (r + 1), cell);
+                }
+            );
+
+            xml += "</row>";
+        }
+    );
+
+    xml += "</sheetData>";
+
+    xml +=
+        '<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>';
+
+    if (options.drawing) {
+        xml += '<drawing r:id="rId1"/>';
+    }
+
+    xml += "</worksheet>";
+
+    return xml;
+}
+
+
+const XLSX_STYLES =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+    + '<numFmts count="3">'
+    + '<numFmt numFmtId="164" formatCode="0.000"/>'
+    + '<numFmt numFmtId="165" formatCode="0.0%"/>'
+    + '<numFmt numFmtId="166" formatCode="0.0"/>'
+    + "</numFmts>"
+    + '<fonts count="4">'
+    + '<font><sz val="11"/><name val="Calibri"/><family val="2"/></font>'
+    + '<font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font>'
+    + '<font><b/><sz val="16"/><name val="Calibri"/><family val="2"/></font>'
+    + '<font><i/><sz val="10"/><color rgb="FF666666"/><name val="Calibri"/><family val="2"/></font>'
+    + "</fonts>"
+    + '<fills count="3">'
+    + '<fill><patternFill patternType="none"/></fill>'
+    + '<fill><patternFill patternType="gray125"/></fill>'
+    + '<fill><patternFill patternType="solid"><fgColor rgb="FFDCE6F2"/><bgColor indexed="64"/></patternFill></fill>'
+    + "</fills>"
+    + '<borders count="2">'
+    + "<border><left/><right/><top/><bottom/><diagonal/></border>"
+    + '<border><left/><right/><top/><bottom style="thin"><color rgb="FF8EA9C8"/></bottom><diagonal/></border>'
+    + "</borders>"
+    + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+    + '<cellXfs count="9">'
+    + '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+    + '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>'
+    + '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+    + '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+    + '<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+    + '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
+    + '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
+    + '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
+    + '<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+    + "</cellXfs>"
+    + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
+    + "</styleSheet>";
+
+
+/* =========================================================
+   XLSX CHART HELPERS (native Excel charts)
+========================================================= */
+
+const CHART_NS =
+    ' xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"'
+    + ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+    + ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+
+
+function chartText(text, size, bold) {
+
+    return (
+        "<c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz=\"" + size + "\""
+        + (bold ? ' b="1"' : ' b="0"') + "/></a:pPr>"
+        + '<a:r><a:rPr lang="en-US" sz="' + size + '"' + (bold ? ' b="1"' : ' b="0"') + "/>"
+        + "<a:t>" + xmlEscape(text) + "</a:t></a:r></a:p></c:rich></c:tx>"
+    );
+}
+
+
+function chartTitle(text) {
+
+    return (
+        "<c:title>" + chartText(text, 1400, true)
+        + '<c:overlay val="0"/></c:title>'
+    );
+}
+
+
+function axisTitle(text) {
+
+    return (
+        "<c:title>" + chartText(text, 1000, false)
+        + '<c:overlay val="0"/></c:title>'
+    );
+}
+
+
+function seriesName(ref, name) {
+
+    return (
+        "<c:tx><c:strRef><c:f>" + ref + "</c:f>"
+        + '<c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>'
+        + xmlEscape(name) + "</c:v></c:pt></c:strCache></c:strRef></c:tx>"
+    );
+}
+
+
+function numRef(ref, values, formatCode) {
+
+    return (
+        "<c:numRef><c:f>" + ref + "</c:f><c:numCache>"
+        + "<c:formatCode>" + (formatCode || "General") + "</c:formatCode>"
+        + '<c:ptCount val="' + values.length + '"/>'
+        + values
+        .map(
+            function(v, i) {
+                return '<c:pt idx="' + i + '"><c:v>' + v + "</c:v></c:pt>";
+            }
+        )
+        .join("")
+        + "</c:numCache></c:numRef>"
+    );
+}
+
+
+function strRef(ref, values) {
+
+    return (
+        "<c:strRef><c:f>" + ref + "</c:f><c:strCache>"
+        + '<c:ptCount val="' + values.length + '"/>'
+        + values
+        .map(
+            function(v, i) {
+                return '<c:pt idx="' + i + '"><c:v>' + xmlEscape(v) + "</c:v></c:pt>";
+            }
+        )
+        .join("")
+        + "</c:strCache></c:strRef>"
+    );
+}
+
+
+function lineStyle(color, width, dash) {
+
+    return (
+        '<c:spPr><a:ln w="' + width + '" cap="rnd">'
+        + '<a:solidFill><a:srgbClr val="' + color + '"/></a:solidFill>'
+        + (dash ? '<a:prstDash val="' + dash + '"/>' : "")
+        + "<a:round/></a:ln></c:spPr>"
+    );
+}
+
+
+function markerStyle(symbol, size, color) {
+
+    if (symbol === "none") {
+        return '<c:marker><c:symbol val="none"/></c:marker>';
+    }
+
+    return (
+        '<c:marker><c:symbol val="' + symbol + '"/><c:size val="' + size + '"/>'
+        + '<c:spPr><a:solidFill><a:srgbClr val="' + color + '"/></a:solidFill>'
+        + '<a:ln w="9525"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln></c:spPr>'
+        + "</c:marker>"
+    );
+}
+
+
+function axisText() {
+
+    return (
+        "<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr>"
+        + '<a:defRPr sz="900"><a:solidFill><a:srgbClr val="595959"/></a:solidFill></a:defRPr>'
+        + '</a:pPr><a:endParaRPr lang="en-US"/></a:p></c:txPr>'
+    );
+}
+
+
+function gridLines() {
+
+    return (
+        "<c:majorGridlines><c:spPr><a:ln w=\"6350\">"
+        + '<a:solidFill><a:srgbClr val="E0E0E0"/></a:solidFill>'
+        + "</a:ln></c:spPr></c:majorGridlines>"
+    );
+}
+
+
+function chartSpace(title, plotArea, legend) {
+
+    return (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + "<c:chartSpace" + CHART_NS + ">"
+        + '<c:roundedCorners val="0"/>'
+        + "<c:chart>"
+        + chartTitle(title)
+        + '<c:autoTitleDeleted val="0"/>'
+        + plotArea
+        + (
+            legend
+            ? '<c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend>'
+            : ""
+        )
+        + '<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/>'
+        + "</c:chart>"
+        + '<c:spPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>'
+        + '<a:ln w="9525"><a:solidFill><a:srgbClr val="D9D9D9"/></a:solidFill></a:ln></c:spPr>'
+        + "</c:chartSpace>"
+    );
+}
+
+
+function controlChartXML(data) {
+
+    const last = data.n + 1;
+
+    const lapNumbers =
+        data.laps.map(
+            function(lap) {
+                return lap.lapNumber;
+            }
+        );
+
+    const repeat =
+        function(value) {
+            return data.laps.map(
+                function() {
+                    return value;
+                }
+            );
+        };
+
+    const series =
+        function(index, column, name, values, line, marker, extra) {
+            return (
+                "<c:ser>"
+                + '<c:idx val="' + index + '"/><c:order val="' + index + '"/>'
+                + seriesName("Laps!$" + column + "$1", name)
+                + line
+                + marker
+                + (extra || "")
+                + "<c:cat>" + numRef("Laps!$A$2:$A$" + last, lapNumbers) + "</c:cat>"
+                + "<c:val>" + numRef("Laps!$" + column + "$2:$" + column + "$" + last, values, "0.000") + "</c:val>"
+                + '<c:smooth val="0"/>'
+                + "</c:ser>"
+            );
+        };
+
+    /*
+        Highlight laps outside the control limits
+        (as of export) with red markers.
+    */
+
+    const outsidePoints =
+        data.laps
+        .map(
+            function(lap, i) {
+                if (lap.lapTime > data.stats.ucl || lap.lapTime < data.stats.lcl) {
+                    return (
+                        '<c:dPt><c:idx val="' + i + '"/>'
+                        + markerStyle("circle", 8, "DC3545")
+                        + '<c:bubble3D val="0"/></c:dPt>'
+                    );
+                }
+                return "";
+            }
+        )
+        .join("");
+
+    const plotArea =
+        "<c:plotArea><c:layout/>"
+        + "<c:lineChart>"
+        + '<c:grouping val="standard"/><c:varyColors val="0"/>'
+        + series(
+            0, "B", "Lap Time (sec)",
+            data.laps.map(function(lap) { return lap.lapTime; }),
+            lineStyle("0A84FF", 22225),
+            markerStyle("circle", 6, "0A84FF"),
+            outsidePoints
+        )
+        + series(1, "F", "Mean", repeat(data.stats.mean), lineStyle("2E9E5B", 19050), markerStyle("none"))
+        + series(2, "G", "UCL", repeat(data.stats.ucl), lineStyle("7F7F7F", 15875, "dash"), markerStyle("none"))
+        + series(3, "H", "LCL", repeat(data.stats.lcl), lineStyle("7F7F7F", 15875, "dash"), markerStyle("none"))
+        + '<c:marker val="1"/>'
+        + '<c:axId val="50010"/><c:axId val="50020"/>'
+        + "</c:lineChart>"
+        + '<c:catAx><c:axId val="50010"/><c:scaling><c:orientation val="minMax"/></c:scaling>'
+        + '<c:delete val="0"/><c:axPos val="b"/>'
+        + axisTitle("Lap")
+        + '<c:numFmt formatCode="General" sourceLinked="1"/>'
+        + '<c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="low"/>'
+        + axisText()
+        + '<c:crossAx val="50020"/><c:crosses val="autoZero"/><c:auto val="1"/>'
+        + '<c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>'
+        + '<c:valAx><c:axId val="50020"/><c:scaling><c:orientation val="minMax"/>'
+        + '<c:min val="' + data.yMin + '"/></c:scaling>'
+        + '<c:delete val="0"/><c:axPos val="l"/>'
+        + gridLines()
+        + axisTitle("Seconds")
+        + '<c:numFmt formatCode="0" sourceLinked="0"/>'
+        + '<c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/>'
+        + axisText()
+        + '<c:crossAx val="50010"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx>'
+        + "</c:plotArea>";
+
+    return chartSpace("Lap Times (Control Chart)", plotArea, true);
+}
+
+
+function histogramChartXML(data) {
+
+    const last = data.bins.length + 1;
+
+    const plotArea =
+        "<c:plotArea><c:layout/>"
+        + "<c:barChart>"
+        + '<c:barDir val="col"/><c:grouping val="clustered"/><c:varyColors val="0"/>'
+        + "<c:ser>"
+        + '<c:idx val="0"/><c:order val="0"/>'
+        + seriesName("Distribution!$D$1", "Laps")
+        + '<c:spPr><a:solidFill><a:srgbClr val="0A84FF"/></a:solidFill></c:spPr>'
+        + '<c:invertIfNegative val="0"/>'
+        + "<c:dLbls>"
+        + '<c:numFmt formatCode="0;;;" sourceLinked="0"/>'
+        + "<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr>"
+        + '<a:defRPr sz="900" b="1"/></a:pPr><a:endParaRPr lang="en-US"/></a:p></c:txPr>'
+        + '<c:dLblPos val="outEnd"/>'
+        + '<c:showLegendKey val="0"/><c:showVal val="1"/><c:showCatName val="0"/>'
+        + '<c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/>'
+        + "</c:dLbls>"
+        + "<c:cat>"
+        + strRef(
+            "Distribution!$C$2:$C$" + last,
+            data.bins.map(function(bin) { return bin.label; })
+        )
+        + "</c:cat>"
+        + "<c:val>"
+        + numRef(
+            "Distribution!$D$2:$D$" + last,
+            data.bins.map(function(bin) { return bin.count; }),
+            "0"
+        )
+        + "</c:val>"
+        + "</c:ser>"
+        + '<c:gapWidth val="15"/>'
+        + '<c:axId val="60010"/><c:axId val="60020"/>'
+        + "</c:barChart>"
+        + '<c:catAx><c:axId val="60010"/><c:scaling><c:orientation val="minMax"/></c:scaling>'
+        + '<c:delete val="0"/><c:axPos val="b"/>'
+        + axisTitle("Lap time (seconds)")
+        + '<c:numFmt formatCode="General" sourceLinked="0"/>'
+        + '<c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/>'
+        + axisText()
+        + '<c:crossAx val="60020"/><c:crosses val="autoZero"/><c:auto val="1"/>'
+        + '<c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>'
+        + '<c:valAx><c:axId val="60020"/><c:scaling><c:orientation val="minMax"/>'
+        + '<c:min val="0"/></c:scaling>'
+        + '<c:delete val="0"/><c:axPos val="l"/>'
+        + gridLines()
+        + axisTitle("Number of laps")
+        + '<c:numFmt formatCode="0" sourceLinked="0"/>'
+        + '<c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/>'
+        + axisText()
+        + '<c:crossAx val="60010"/><c:crosses val="autoZero"/><c:crossBetween val="between"/>'
+        + '<c:majorUnit val="' + data.countStep + '"/></c:valAx>'
+        + "</c:plotArea>";
+
+    return chartSpace("Lap Time Distribution", plotArea, false);
+}
+
+
+function chartAnchor(id, rId, fromRow, toRow) {
+
+    return (
+        '<xdr:twoCellAnchor editAs="oneCell">'
+        + "<xdr:from><xdr:col>1</xdr:col><xdr:colOff>0</xdr:colOff>"
+        + "<xdr:row>" + fromRow + "</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>"
+        + "<xdr:to><xdr:col>13</xdr:col><xdr:colOff>0</xdr:colOff>"
+        + "<xdr:row>" + toRow + "</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>"
+        + '<xdr:graphicFrame macro="">'
+        + '<xdr:nvGraphicFramePr><xdr:cNvPr id="' + id + '" name="Chart ' + id + '"/>'
+        + "<xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr>"
+        + '<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>'
+        + '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart">'
+        + '<c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"'
+        + ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="' + rId + '"/>'
+        + "</a:graphicData></a:graphic></xdr:graphicFrame>"
+        + "<xdr:clientData/></xdr:twoCellAnchor>"
+    );
+}
+
+
+function htmlToText(html) {
+
+    const doc =
+        new DOMParser().parseFromString(
+            "<body>" + html + "</body>",
+            "text/html"
+        );
+
+    return doc.body.textContent;
+}
+
+
+/* =========================================================
+   EXCEL EXPORT (.xlsx)
+
+   Sheets:
+     Summary       study details, statistics as live
+                   formulas, insights at export time
+     Charts        native Excel control chart + histogram
+     Laps          lap data, cumulative/moving range
+                   formulas, chart helper columns
+     Distribution  histogram bins with COUNTIFS formulas
+
+   Laps stay chronological for easier analysis.
 ========================================================= */
 
 function exportExcel() {
 
     recalculateLaps();
 
+    const n = laps.length;
+    const last = n + 1;
+    const hasStats = n >= 2;
 
-    let average =
-        0;
+    const R = "Laps!$B$2:$B$" + last;
+
+    const stats =
+        hasStats
+        ? computeStats(laps.map(function(lap) { return lap.lapTime; }))
+        : null;
 
 
-    if (
-        laps.length
-        >
-        0
-    ) {
+    /* ---------------- Summary sheet ---------------- */
 
-        average =
-            laps.reduce(
+    const summary = [];
 
-                function(
-                    sum,
-                    lap
-                ) {
+    summary[0] = [
+        { v: "Time Study Summary", s: XS.title }
+    ];
 
-                    return (
-                        sum
-                        +
-                        lap.lapTime
+    const info = [
+        ["Study Name", getStudyName()],
+        ["Machine", fieldValue("machine")],
+        ["Part Number", fieldValue("partNumber")],
+        ["Operator", fieldValue("operator")],
+        ["Exported", new Date().toLocaleString()]
+    ];
+
+    info.forEach(
+        function(item, i) {
+            summary[2 + i] = [
+                { v: item[0], s: XS.bold },
+                { v: item[1] }
+            ];
+        }
+    );
+
+    const statRowStart = 9;   /* 0-based: header at Excel row 9 */
+
+    summary[statRowStart - 1] = [
+        { v: "Statistic", s: XS.header },
+        { v: "Value", s: XS.header },
+        { v: "Unit", s: XS.header },
+        { v: "How it is calculated", s: XS.header }
+    ];
+
+    const statRefs = {};
+
+    if (hasStats) {
+
+        const half = Math.floor(n / 2);
+
+        const average =
+            function(list) {
+                return (
+                    list.reduce(function(sum, lap) { return sum + lap.lapTime; }, 0)
+                    / list.length
+                );
+            };
+
+        const outsideCount =
+            laps.filter(
+                function(lap) {
+                    return lap.lapTime > stats.ucl || lap.lapTime < stats.lcl;
+                }
+            ).length;
+
+        /*
+            [key, label, formula (with {key} placeholders), cached, style, unit, note]
+        */
+
+        const definitions = [
+            ["count", "Laps", "COUNT(" + R + ")", n, XS.integer, "", "Number of laps recorded"],
+            ["total", "Total time", "SUM(" + R + ")", stats.total, XS.num3, "sec", "Sum of all lap times"],
+            ["mean", "Mean", "AVERAGE(" + R + ")", stats.mean, XS.num3, "sec", "Average lap time"],
+            ["median", "Median", "MEDIAN(" + R + ")", stats.median, XS.num3, "sec", "Middle lap time"],
+            ["sd", "Standard deviation", "STDEV(" + R + ")", stats.sd, XS.num3, "sec", "Sample standard deviation"],
+            ["variance", "Variance", "VAR(" + R + ")", stats.variance, XS.num3, "sec²", "Sample variance"],
+            ["cv", "Coefficient of variation", "IF({mean}>0,{sd}/{mean},0)", stats.cv / 100, XS.percent, "", "Std deviation / mean"],
+            ["se", "Standard error", "{sd}/SQRT({count})", stats.standardError, XS.num3, "sec", "Std deviation / √n"],
+            ["ciLow", "95% CI lower", "{mean}-TINV(0.05,{count}-1)*{se}", stats.ciLow, XS.num3, "sec", "Mean − t × standard error"],
+            ["ciHigh", "95% CI upper", "{mean}+TINV(0.05,{count}-1)*{se}", stats.ciHigh, XS.num3, "sec", "Mean + t × standard error"],
+            ["min", "Minimum", "MIN(" + R + ")", stats.min, XS.num3, "sec", "Fastest lap"],
+            ["max", "Maximum", "MAX(" + R + ")", stats.max, XS.num3, "sec", "Slowest lap"],
+            ["range", "Range", "{max}-{min}", stats.range, XS.num3, "sec", "Maximum − minimum"],
+            ["q1", "First quartile (Q1)", "QUARTILE(" + R + ",1)", stats.q1, XS.num3, "sec", "25th percentile"],
+            ["q3", "Third quartile (Q3)", "QUARTILE(" + R + ",3)", stats.q3, XS.num3, "sec", "75th percentile"],
+            ["iqr", "Interquartile range", "{q3}-{q1}", stats.iqr, XS.num3, "sec", "Q3 − Q1"],
+            ["mr", "Average moving range", "AVERAGE(Laps!$E$3:$E$" + last + ")", stats.averageMovingRange, XS.num3, "sec", "Average change between consecutive laps"],
+            ["ucl", "Upper control limit", "{mean}+2.66*{mr}", stats.ucl, XS.num3, "sec", "Mean + 2.66 × avg moving range"],
+            ["lcl", "Lower control limit", "MAX(0,{mean}-2.66*{mr})", stats.lcl, XS.num3, "sec", "Mean − 2.66 × avg moving range"],
+            ["outside", "Laps outside limits", "COUNTIF(" + R + ",\">\"&{ucl})+COUNTIF(" + R + ",\"<\"&{lcl})", outsideCount, XS.integer, "", "Likely special causes"],
+            ["slope", "Trend", "SLOPE(" + R + ",Laps!$A$2:$A$" + last + ")", stats.slope, XS.num3, "sec/lap", "Linear trend; negative = getting faster"],
+            ["firstHalf", "First half average", "AVERAGE(Laps!$B$2:$B$" + (1 + half) + ")", average(laps.slice(0, half)), XS.num3, "sec", "Laps 1–" + half],
+            ["secondHalf", "Second half average", "AVERAGE(Laps!$B$" + (last - half + 1) + ":$B$" + last + ")", average(laps.slice(n - half)), XS.num3, "sec", "Laps " + (n - half + 1) + "–" + n],
+            ["cph", "Cycles per hour", "IF({mean}>0,3600/{mean},0)", stats.cyclesPerHour, XS.num1, "", "3600 / mean (before allowances)"],
+            ["shift", "Cycles per 8-hour shift", "{cph}*8", stats.cyclesPerHour * 8, XS.integer, "", "Cycles per hour × 8"],
+            ["needed", "Laps needed (±5%, 95%)", "IF({mean}>0,ROUNDUP((1.96*{sd}/(0.05*{mean}))^2,0),0)", stats.requiredLaps, XS.integer, "", "(1.96 × sd / (0.05 × mean))²"]
+        ];
+
+        definitions.forEach(
+            function(def, i) {
+                statRefs[def[0]] = "$B$" + (statRowStart + 1 + i);
+            }
+        );
+
+        definitions.forEach(
+            function(def, i) {
+
+                const formula =
+                    def[2].replace(
+                        /\{(\w+)\}/g,
+                        function(match, key) {
+                            return statRefs[key];
+                        }
                     );
-                },
 
-                0
-            )
+                summary[statRowStart + i] = [
+                    { v: def[1] },
+                    { v: def[3], f: formula, s: def[4] },
+                    { v: def[5] },
+                    { v: def[6], s: XS.note }
+                ];
+            }
+        );
 
-            /
+        /* Insights (text, as of export) */
 
-            laps.length;
+        let row = statRowStart + definitions.length + 2;
+
+        summary[row] = [
+            { v: "Insights (at time of export)", s: XS.header },
+            { s: XS.header },
+            { s: XS.header },
+            { s: XS.header }
+        ];
+
+        buildInsights(stats).forEach(
+            function(item) {
+                row++;
+                summary[row] = [
+                    { v: "• " + htmlToText(item.html) }
+                ];
+            }
+        );
+
+    } else {
+
+        summary[statRowStart] = [
+            { v: "Record at least 2 laps to calculate statistics.", s: XS.note }
+        ];
     }
 
 
-    let rows =
-        "";
+    /* ---------------- Laps sheet ---------------- */
 
+    const lapRows = [];
 
-    rows +=
-        "<Row>"
+    lapRows[0] = [
+        { v: "Lap", s: XS.header },
+        { v: "Lap Time (sec)", s: XS.header },
+        { v: "Cumulative (sec)", s: XS.header },
+        { v: "Notes", s: XS.header }
+    ];
 
-        +
-        excelCell(
-            "Study Name",
-            "String"
-        )
-
-        +
-        excelCell(
-            getStudyName(),
-            "String"
-        )
-
-        +
-        "</Row>";
-
-
-    rows +=
-        "<Row>"
-
-        +
-        excelCell(
-            "Machine",
-            "String"
-        )
-
-        +
-        excelCell(
-            fieldValue(
-                "machine"
-            ),
-            "String"
-        )
-
-        +
-        "</Row>";
-
-
-    rows +=
-        "<Row>"
-
-        +
-        excelCell(
-            "Part Number",
-            "String"
-        )
-
-        +
-        excelCell(
-            fieldValue(
-                "partNumber"
-            ),
-            "String"
-        )
-
-        +
-        "</Row>";
-
-
-    rows +=
-        "<Row>"
-
-        +
-        excelCell(
-            "Operator",
-            "String"
-        )
-
-        +
-        excelCell(
-            fieldValue(
-                "operator"
-            ),
-            "String"
-        )
-
-        +
-        "</Row>";
-
-
-    rows +=
-        "<Row>"
-
-        +
-        excelCell(
-            "Export Date",
-            "String"
-        )
-
-        +
-        excelCell(
-
-            new Date()
-            .toLocaleString(),
-
-            "String"
-        )
-
-        +
-        "</Row>";
-
-
-    rows +=
-        "<Row>"
-
-        +
-        excelCell(
-            "Total Laps",
-            "String"
-        )
-
-        +
-        excelCell(
-            laps.length,
-            "Number"
-        )
-
-        +
-        "</Row>";
-
-
-    rows +=
-        "<Row>"
-
-        +
-        excelCell(
-            "Average Lap",
-            "String"
-        )
-
-        +
-        excelCell(
-            average
-            .toFixed(3),
-            "Number"
-        )
-
-        +
-        "</Row>";
-
-
-    rows +=
-        "<Row></Row>";
-
-
-    rows +=
-        "<Row>"
-
-        +
-        excelCell(
-            "Lap Number",
-            "String"
-        )
-
-        +
-        excelCell(
-            "Lap Time (sec)",
-            "String"
-        )
-
-        +
-        excelCell(
-            "Cumulative Time (sec)",
-            "String"
-        )
-
-        +
-        excelCell(
-            "Notes",
-            "String"
-        )
-
-        +
-        "</Row>";
-
-
-    /*
-        Excel remains chronological for
-        easier analysis.
-    */
+    if (hasStats) {
+        lapRows[0].push(
+            { v: "Moving Range (sec)", s: XS.header },
+            { v: "Mean", s: XS.header },
+            { v: "UCL", s: XS.header },
+            { v: "LCL", s: XS.header },
+            { v: "Outside Limits", s: XS.header }
+        );
+    }
 
     laps.forEach(
+        function(lap, i) {
 
-        function(lap) {
+            const r = i + 2;
 
-            rows +=
-                "<Row>"
+            const row = [
+                { v: lap.lapNumber, s: XS.integer },
+                { v: lap.lapTime, s: XS.num3 },
+                { v: lap.cumulative, f: "SUM($B$2:B" + r + ")", s: XS.num3 },
+                { v: lap.notes || "" }
+            ];
 
-                +
-                excelCell(
-                    lap.lapNumber,
-                    "Number"
-                )
+            if (hasStats) {
 
-                +
-                excelCell(
-                    lap.lapTime
-                    .toFixed(3),
-                    "Number"
-                )
+                const outside =
+                    lap.lapTime > stats.ucl || lap.lapTime < stats.lcl;
 
-                +
-                excelCell(
-                    lap.cumulative
-                    .toFixed(3),
-                    "Number"
-                )
+                row.push(
+                    i === 0
+                    ? null
+                    : {
+                        v: Math.abs(lap.lapTime - laps[i - 1].lapTime),
+                        f: "ABS(B" + r + "-B" + (r - 1) + ")",
+                        s: XS.num3
+                    },
+                    { v: stats.mean, f: "Summary!" + statRefs.mean, s: XS.num3 },
+                    { v: stats.ucl, f: "Summary!" + statRefs.ucl, s: XS.num3 },
+                    { v: stats.lcl, f: "Summary!" + statRefs.lcl, s: XS.num3 },
+                    {
+                        v: outside ? "Yes" : "",
+                        f: "IF(OR(B" + r + ">G" + r + ",B" + r + "<H" + r + "),\"Yes\",\"\")"
+                    }
+                );
+            }
 
-                +
-                excelCell(
-                    lap.notes
-                    ||
-                    "",
-                    "String"
-                )
-
-                +
-                "</Row>";
+            lapRows[i + 1] = row;
         }
     );
 
 
-    const xml =
+    /* ---------------- Distribution sheet ---------------- */
 
-        '<?xml version="1.0"?>'
+    const distRows = [];
+    const bins = [];
 
-        +
-        '<?mso-application progid="Excel.Sheet"?>'
+    distRows[0] = [
+        { v: "Bin Start (sec)", s: XS.header },
+        { v: "Bin End (sec)", s: XS.header },
+        { v: "Range", s: XS.header },
+        { v: "Laps", s: XS.header }
+    ];
 
-        +
-        '<Workbook '
+    let countStep = 1;
 
-        +
-        'xmlns="urn:schemas-microsoft-com:office:spreadsheet" '
+    if (hasStats) {
 
-        +
-        'xmlns:o="urn:schemas-microsoft-com:office:office" '
+        const histogram = histogramBins(stats);
+        const xs = histogram.xScale;
 
-        +
-        'xmlns:x="urn:schemas-microsoft-com:office:excel" '
+        histogram.counts.forEach(
+            function(count, i) {
 
-        +
-        'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'
+                const start = xs.min + i * xs.step;
+                const end = xs.min + (i + 1) * xs.step;
+                const r = i + 2;
+                const isLast = i === histogram.counts.length - 1;
 
-        +
-        '<Worksheet ss:Name="Time Study">'
+                const label =
+                    tickLabel(start, xs.step) + "–" + tickLabel(end, xs.step);
 
-        +
-        '<Table>'
+                bins.push({ label: label, count: count });
 
-        +
-        rows
-
-        +
-        '</Table>'
-
-        +
-        '</Worksheet>'
-
-        +
-        '</Workbook>';
-
-
-    const blob =
-        new Blob(
-
-            [xml],
-
-            {
-                type:
-                    "application/vnd.ms-excel"
+                distRows[i + 1] = [
+                    { v: Number(start.toFixed(6)), s: XS.num3 },
+                    { v: Number(end.toFixed(6)), s: XS.num3 },
+                    { v: label },
+                    {
+                        v: count,
+                        f: "COUNTIFS(" + R + ",\">=\"&A" + r + "," + R + ",\""
+                            + (isLast ? "<=" : "<") + "\"&B" + r + ")",
+                        s: XS.integer
+                    }
+                ];
             }
         );
 
+        countStep =
+            Math.max(1, niceScale(0, Math.max.apply(null, histogram.counts), 4).step);
+    }
+
+
+    /* ---------------- Charts sheet ---------------- */
+
+    const chartRows = [
+        [{ v: "Charts", s: XS.title }],
+        [{ v: hasStats ? "Charts update automatically when lap times on the Laps sheet change." : "Record at least 2 laps to generate charts.", s: XS.note }]
+    ];
+
+
+    /* ---------------- Assemble workbook ---------------- */
+
+    const files = [];
+
+    const sheets = [
+        { name: "Summary", xml: xlsxSheet({ rows: summary, widths: [30, 14, 9, 42], selected: true, hideGrid: true }) },
+        { name: "Charts", xml: xlsxSheet({ rows: chartRows, hideGrid: true, drawing: hasStats }) },
+        { name: "Laps", xml: xlsxSheet({ rows: lapRows, widths: hasStats ? [7, 15, 16, 40, 19, 10, 10, 10, 14] : [7, 15, 16, 40], freezeHeader: true }) },
+        { name: "Distribution", xml: xlsxSheet({ rows: distRows, widths: [15, 14, 16, 8], freezeHeader: true }) }
+    ];
+
+    let contentTypes =
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        + '<Default Extension="xml" ContentType="application/xml"/>'
+        + '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+        + '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>'
+        + '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>';
+
+    sheets.forEach(
+        function(sheet, i) {
+            contentTypes +=
+                '<Override PartName="/xl/worksheets/sheet' + (i + 1)
+                + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+        }
+    );
+
+    if (hasStats) {
+        contentTypes +=
+            '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>'
+            + '<Override PartName="/xl/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>'
+            + '<Override PartName="/xl/charts/chart2.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>';
+    }
+
+    contentTypes += "</Types>";
+
+    files.push({ name: "[Content_Types].xml", data: contentTypes });
+
+    files.push({
+        name: "_rels/.rels",
+        data:
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+            + '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>'
+            + '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>'
+            + "</Relationships>"
+    });
+
+    const isoNow = new Date().toISOString().replace(/\.\d+Z$/, "Z");
+
+    files.push({
+        name: "docProps/core.xml",
+        data:
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            + '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"'
+            + ' xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/"'
+            + ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+            + "<dc:title>" + xmlEscape(getStudyName()) + "</dc:title>"
+            + "<dc:creator>Time Study</dc:creator>"
+            + '<dcterms:created xsi:type="dcterms:W3CDTF">' + isoNow + "</dcterms:created>"
+            + '<dcterms:modified xsi:type="dcterms:W3CDTF">' + isoNow + "</dcterms:modified>"
+            + "</cp:coreProperties>"
+    });
+
+    files.push({
+        name: "docProps/app.xml",
+        data:
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            + '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">'
+            + "<Application>Time Study</Application></Properties>"
+    });
+
+    files.push({
+        name: "xl/workbook.xml",
+        data:
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+            + ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            + '<bookViews><workbookView activeTab="0"/></bookViews>'
+            + "<sheets>"
+            + sheets
+            .map(
+                function(sheet, i) {
+                    return (
+                        '<sheet name="' + sheet.name + '" sheetId="' + (i + 1)
+                        + '" r:id="rId' + (i + 1) + '"/>'
+                    );
+                }
+            )
+            .join("")
+            + "</sheets>"
+            + '<calcPr calcId="191029" fullCalcOnLoad="1"/>'
+            + "</workbook>"
+    });
+
+    files.push({
+        name: "xl/_rels/workbook.xml.rels",
+        data:
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            + sheets
+            .map(
+                function(sheet, i) {
+                    return (
+                        '<Relationship Id="rId' + (i + 1)
+                        + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"'
+                        + ' Target="worksheets/sheet' + (i + 1) + '.xml"/>'
+                    );
+                }
+            )
+            .join("")
+            + '<Relationship Id="rId' + (sheets.length + 1)
+            + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+            + "</Relationships>"
+    });
+
+    files.push({ name: "xl/styles.xml", data: XLSX_STYLES });
+
+    sheets.forEach(
+        function(sheet, i) {
+            files.push({
+                name: "xl/worksheets/sheet" + (i + 1) + ".xml",
+                data: sheet.xml
+            });
+        }
+    );
+
+    if (hasStats) {
+
+        files.push({
+            name: "xl/worksheets/_rels/sheet2.xml.rels",
+            data:
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>'
+                + "</Relationships>"
+        });
+
+        files.push({
+            name: "xl/drawings/drawing1.xml",
+            data:
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                + '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"'
+                + ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+                + chartAnchor(2, "rId1", 3, 25)
+                + chartAnchor(3, "rId2", 27, 49)
+                + "</xdr:wsDr>"
+        });
+
+        files.push({
+            name: "xl/drawings/_rels/drawing1.xml.rels",
+            data:
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart1.xml"/>'
+                + '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart2.xml"/>'
+                + "</Relationships>"
+        });
+
+        const yScale =
+            niceScale(
+                Math.min(stats.min, stats.lcl),
+                Math.max(stats.max, stats.ucl),
+                5
+            );
+
+        files.push({
+            name: "xl/charts/chart1.xml",
+            data: controlChartXML({
+                n: n,
+                laps: laps,
+                stats: stats,
+                yMin: Math.max(0, yScale.min)
+            })
+        });
+
+        files.push({
+            name: "xl/charts/chart2.xml",
+            data: histogramChartXML({
+                bins: bins,
+                countStep: countStep
+            })
+        });
+    }
+
+    const blob =
+        buildZip(
+            files,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
 
     saveFile(
-
         blob,
-
-        getSafeFileName()
-        +
-        ".xml"
+        getSafeFileName() + ".xlsx"
     );
 }
 
@@ -5283,27 +6090,10 @@ function renderTrendChart(stats) {
 
 
 /* =========================================================
-   DISTRIBUTION HISTOGRAM
+   HISTOGRAM BINS (shared by chart and Excel export)
 ========================================================= */
 
-function renderHistogram(stats) {
-
-    const container = $("histChart");
-
-    const size = chartSize(container);
-
-    const pad = {
-        top: 20,
-        right: 16,
-        bottom: 34,
-        left: 46
-    };
-
-    const plotWidth =
-        size.width - pad.left - pad.right;
-
-    const plotHeight =
-        size.height - pad.top - pad.bottom;
+function histogramBins(stats) {
 
     /*
         Bin count scaled from Sturges' rule,
@@ -5348,6 +6138,45 @@ function renderHistogram(stats) {
             counts[index]++;
         }
     );
+
+    return {
+        xScale: xScale,
+        binCount: binCount,
+        counts: counts
+    };
+}
+
+
+/* =========================================================
+   DISTRIBUTION HISTOGRAM
+========================================================= */
+
+function renderHistogram(stats) {
+
+    const container = $("histChart");
+
+    const size = chartSize(container);
+
+    const pad = {
+        top: 20,
+        right: 16,
+        bottom: 34,
+        left: 46
+    };
+
+    const plotWidth =
+        size.width - pad.left - pad.right;
+
+    const plotHeight =
+        size.height - pad.top - pad.bottom;
+
+    const bins =
+        histogramBins(stats);
+
+    const xScale = bins.xScale;
+
+    const counts = bins.counts;
+
 
     const maxCount =
         Math.max.apply(null, counts);
