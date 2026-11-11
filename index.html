@@ -108,8 +108,10 @@ h1 {
 }
 
 /*
-    The logo sits on a white tile so its colors
-    read correctly in both dark and light themes.
+    The logo is single-color (black). It shows as-is
+    in the light theme and is inverted to white in
+    the dark theme. A thin divider separates it from
+    the app name.
 */
 
 .brand-logo-wrap {
@@ -119,13 +121,13 @@ h1 {
 
     flex:none;
 
-    height:44px;
+    height:36px;
 
-    padding:6px 10px;
+    padding-right:16px;
 
-    background:#ffffff;
-
-    border-radius:8px;
+    border-right:
+        1px solid
+        var(--border);
 }
 
 .brand-logo {
@@ -133,9 +135,12 @@ h1 {
 
     height:100%;
     width:auto;
-    max-width:180px;
 
-    object-fit:contain;
+    filter:invert(1);
+}
+
+body.light .brand-logo {
+    filter:none;
 }
 
 .app-header .app-title {
@@ -1553,13 +1558,9 @@ tr.excluded-row .lap-time-input {
     }
 
     .brand-logo-wrap {
-        height:36px;
+        height:26px;
 
-        padding:5px 8px;
-    }
-
-    .brand-logo {
-        max-width:130px;
+        padding-right:12px;
     }
 
     .app-header .app-title {
@@ -1590,7 +1591,7 @@ tr.excluded-row .lap-time-input {
         <img
             id="brandLogo"
             class="brand-logo"
-            src="flexngate-logo.png"
+            src="flexngate-logo.svg"
             alt="Flex-N-Gate"
             onload="this.parentNode.hidden = false"
             onerror="this.parentNode.hidden = true"
@@ -2188,7 +2189,7 @@ tr.excluded-row .lap-time-input {
 
 
 <div class="app-version">
-    v13
+    v14
 </div>
 
 </div>
