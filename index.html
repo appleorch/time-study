@@ -1021,6 +1021,147 @@ tbody tr:first-child {
     font-weight:bold;
 }
 
+.chart {
+    position:relative;
+}
+
+.chart svg {
+    touch-action:pan-y;
+}
+
+.chart .hover-guide {
+    stroke:var(--muted);
+    stroke-width:1;
+    stroke-dasharray:3 3;
+}
+
+.chart .hover-ring {
+    fill:none;
+    stroke:var(--accent);
+    stroke-width:2;
+    stroke-opacity:.45;
+    pointer-events:none;
+}
+
+.chart .point.active {
+    stroke:var(--text);
+}
+
+.chart .hover-band {
+    fill:var(--text);
+    fill-opacity:.06;
+}
+
+.chart svg.has-active .bar {
+    opacity:.45;
+}
+
+.chart svg.has-active .bar.active {
+    opacity:1;
+}
+
+.chart-tooltip {
+    position:absolute;
+    z-index:5;
+
+    min-width:180px;
+    max-width:260px;
+
+    padding:10px 12px;
+
+    background:var(--panel);
+    color:var(--text);
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius:8px;
+
+    box-shadow:
+        0 6px 18px
+        rgba(0,0,0,.28);
+
+    font-size:12px;
+    line-height:1.4;
+
+    text-align:left;
+
+    pointer-events:none;
+}
+
+.tt-title {
+    display:flex;
+
+    align-items:center;
+    justify-content:space-between;
+
+    gap:10px;
+
+    margin-bottom:6px;
+
+    font-size:13px;
+    font-weight:bold;
+}
+
+.tt-badge {
+    padding:1px 7px;
+
+    border-radius:10px;
+
+    font-size:10px;
+
+    text-transform:uppercase;
+
+    letter-spacing:.4px;
+}
+
+.tt-badge.in {
+    color:var(--green);
+
+    border:
+        1px solid
+        var(--green);
+}
+
+.tt-badge.out {
+    color:var(--red);
+
+    border:
+        1px solid
+        var(--red);
+}
+
+.tt-row {
+    display:flex;
+
+    justify-content:space-between;
+
+    gap:14px;
+
+    padding:2px 0;
+}
+
+.tt-row span {
+    color:var(--muted);
+}
+
+.tt-row b {
+    font-variant-numeric:
+        tabular-nums;
+}
+
+.tt-note {
+    margin-top:6px;
+    padding-top:6px;
+
+    color:var(--muted);
+
+    border-top:
+        1px solid
+        var(--border);
+}
+
 .chart-note {
     margin:10px 0 0 0;
 
@@ -1610,7 +1751,7 @@ tbody tr:first-child {
 
 
 <div class="app-version">
-    v10
+    v10.1
 </div>
 
 </div>
@@ -6057,6 +6198,12 @@ function renderTrendChart(stats) {
 
     /* Series */
 
+    /* Hover guide (drawn under the series) */
+
+    svg +=
+        '<line class="hover-guide" x1="0" x2="0" y1="' + pad.top
+        + '" y2="' + (pad.top + plotHeight) + '" visibility="hidden"/>';
+
     svg +=
         '<polyline class="series" points="'
         + values
@@ -6078,14 +6225,32 @@ function renderTrendChart(stats) {
             svg +=
                 '<circle class="point' + (out ? " out" : "")
                 + '" cx="' + x(i) + '" cy="' + y(v)
-                + '" r="' + (out ? radius + 1 : radius) + '">'
-                + "<title>Lap " + (i + 1) + ": " + fmt(v) + "s</title></circle>";
+                + '" r="' + (out ? radius + 1 : radius) + '"/>';
         }
     );
 
+    svg +=
+        '<circle class="hover-ring" r="' + (radius + 4)
+        + '" cx="0" cy="0" visibility="hidden"/>';
+
     svg += "</svg>";
 
-    container.innerHTML = svg;
+    container.innerHTML =
+        svg + '<div class="chart-tooltip" hidden></div>';
+
+    attachTrendHover(
+        container,
+        {
+            width: size.width,
+            left: pad.left,
+            right: pad.left + plotWidth,
+            top: pad.top,
+            bottom: pad.top + plotHeight,
+            xs: values.map(function(v, i) { return x(i); }),
+            ys: values.map(function(v) { return y(v); }),
+            stats: stats
+        }
+    );
 }
 
 
@@ -6127,6 +6292,12 @@ function histogramBins(stats) {
     const counts =
         new Array(binCount).fill(0);
 
+    const members = [];
+
+    for (let i = 0; i < binCount; i++) {
+        members.push([]);
+    }
+
     laps.forEach(
         function(lap) {
             let index =
@@ -6136,13 +6307,15 @@ function histogramBins(stats) {
             index =
                 Math.min(binCount - 1, Math.max(0, index));
             counts[index]++;
+            members[index].push(lap);
         }
     );
 
     return {
         xScale: xScale,
         binCount: binCount,
-        counts: counts
+        counts: counts,
+        members: members
     };
 }
 
@@ -6237,6 +6410,14 @@ function renderHistogram(stats) {
 
     const barGap = 2;
 
+    const barEdges = [];
+
+    /* Hover band (drawn under the bars) */
+
+    svg +=
+        '<rect class="hover-band" x="0" y="' + pad.top
+        + '" width="0" height="' + plotHeight + '" visibility="hidden"/>';
+
     counts.forEach(
         function(count, i) {
 
@@ -6248,19 +6429,15 @@ function renderHistogram(stats) {
 
             const top = y(count);
 
-            const label =
-                tickLabel(xScale.min + i * xScale.step, xScale.step)
-                + "–"
-                + tickLabel(xScale.min + (i + 1) * xScale.step, xScale.step)
-                + "s: " + count + (count === 1 ? " lap" : " laps");
+            barEdges.push([left, right]);
 
             if (count > 0) {
                 svg +=
-                    '<rect class="bar" x="' + (left + barGap / 2)
+                    '<rect class="bar" data-bin="' + i + '" x="' + (left + barGap / 2)
                     + '" y="' + top
                     + '" width="' + Math.max(1, right - left - barGap)
                     + '" height="' + (pad.top + plotHeight - top)
-                    + '" rx="2"><title>' + label + "</title></rect>"
+                    + '" rx="2"/>'
                     + '<text class="bar-label" x="' + ((left + right) / 2)
                     + '" y="' + (top - 5)
                     + '" text-anchor="middle">' + count + "</text>";
@@ -6304,7 +6481,345 @@ function renderHistogram(stats) {
 
     svg += "</svg>";
 
-    container.innerHTML = svg;
+    container.innerHTML =
+        svg + '<div class="chart-tooltip" hidden></div>';
+
+    attachHistogramHover(
+        container,
+        {
+            width: size.width,
+            top: pad.top,
+            bottom: pad.top + plotHeight,
+            edges: barEdges,
+            bins: bins,
+            stats: stats
+        }
+    );
+}
+
+
+/* =========================================================
+   CHART HOVER TOOLTIPS
+========================================================= */
+
+function signed(value, digits) {
+
+    return (value >= 0 ? "+" : "−") + fmt(Math.abs(value), digits);
+}
+
+
+function tooltipRow(label, value) {
+
+    return (
+        '<div class="tt-row"><span>' + label + "</span>"
+        + "<b>" + value + "</b></div>"
+    );
+}
+
+
+/*
+    Convert a pointer event to SVG coordinates
+    (the SVG may be scaled on very narrow screens).
+*/
+
+function chartPoint(container, event, width) {
+
+    const svg = container.querySelector("svg");
+
+    const rect = svg.getBoundingClientRect();
+
+    const scale = rect.width / width;
+
+    return {
+        x: (event.clientX - rect.left) / scale,
+        y: (event.clientY - rect.top) / scale,
+        scale: scale,
+        offsetX: rect.left - container.getBoundingClientRect().left,
+        offsetY: rect.top - container.getBoundingClientRect().top
+    };
+}
+
+
+function placeTooltip(container, tip, html, point, anchorX, anchorY) {
+
+    tip.innerHTML = html;
+    tip.hidden = false;
+
+    const px = point.offsetX + anchorX * point.scale;
+    const py = point.offsetY + anchorY * point.scale;
+
+    const width = tip.offsetWidth;
+    const height = tip.offsetHeight;
+
+    let left = px + 14;
+
+    if (left + width > container.clientWidth) {
+        left = px - 14 - width;
+    }
+
+    left = Math.max(0, left);
+
+    let top = py - height - 12;
+
+    if (top < 0) {
+        top = py + 14;
+    }
+
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+}
+
+
+function bindChartHover(container, onMove, onHide) {
+
+    container.onpointermove = onMove;
+    container.onpointerdown = onMove;
+
+    container.onpointerleave =
+        function(event) {
+            if (event.pointerType === "mouse") {
+                onHide();
+            }
+        };
+
+    container.chartHide = onHide;
+}
+
+
+/*
+    On touch screens a tap shows the tooltip;
+    tapping anywhere else hides it.
+*/
+
+document.addEventListener(
+    "pointerdown",
+    function(event) {
+        document
+        .querySelectorAll(".chart")
+        .forEach(
+            function(chart) {
+                if (!chart.contains(event.target) && chart.chartHide) {
+                    chart.chartHide();
+                }
+            }
+        );
+    }
+);
+
+
+function attachTrendHover(container, ctx) {
+
+    const tip = container.querySelector(".chart-tooltip");
+    const guide = container.querySelector(".hover-guide");
+    const ring = container.querySelector(".hover-ring");
+    const points = container.querySelectorAll(".point");
+
+    let active = -1;
+
+    const hide =
+        function() {
+            tip.hidden = true;
+            guide.setAttribute("visibility", "hidden");
+            ring.setAttribute("visibility", "hidden");
+            if (active >= 0 && points[active]) {
+                points[active].classList.remove("active");
+            }
+            active = -1;
+        };
+
+    const move =
+        function(event) {
+
+            const p = chartPoint(container, event, ctx.width);
+
+            if (
+                p.x < ctx.left - 12 || p.x > ctx.right + 12
+                || p.y < ctx.top - 12 || p.y > ctx.bottom + 12
+            ) {
+                hide();
+                return;
+            }
+
+            /* Snap to the nearest lap */
+
+            let index = 0;
+            let best = Infinity;
+
+            ctx.xs.forEach(
+                function(x, i) {
+                    const d = Math.abs(x - p.x);
+                    if (d < best) {
+                        best = d;
+                        index = i;
+                    }
+                }
+            );
+
+            if (active !== index) {
+
+                if (active >= 0 && points[active]) {
+                    points[active].classList.remove("active");
+                }
+
+                active = index;
+
+                if (points[index]) {
+                    points[index].classList.add("active");
+                }
+            }
+
+            const x = ctx.xs[index];
+            const y = ctx.ys[index];
+
+            guide.setAttribute("x1", x);
+            guide.setAttribute("x2", x);
+            guide.setAttribute("visibility", "visible");
+
+            ring.setAttribute("cx", x);
+            ring.setAttribute("cy", y);
+            ring.setAttribute("visibility", "visible");
+
+            const lap = laps[index];
+            const stats = ctx.stats;
+
+            const out =
+                lap.lapTime > stats.ucl || lap.lapTime < stats.lcl;
+
+            const fromMean = lap.lapTime - stats.mean;
+
+            let html =
+                '<div class="tt-title">Lap ' + lap.lapNumber
+                + '<span class="tt-badge ' + (out ? "out" : "in") + '">'
+                + (out ? "Outside limits" : "Within limits")
+                + "</span></div>"
+                + tooltipRow("Lap time", fmt(lap.lapTime) + " s")
+                + tooltipRow(
+                    "vs. mean",
+                    signed(fromMean) + " s"
+                    + (stats.mean > 0 ? " (" + signed((fromMean / stats.mean) * 100, 1) + "%)" : "")
+                );
+
+            if (index > 0) {
+                html += tooltipRow(
+                    "vs. previous lap",
+                    signed(lap.lapTime - laps[index - 1].lapTime) + " s"
+                );
+            }
+
+            html += tooltipRow("Cumulative", fmt(lap.cumulative) + " s");
+
+            if (lap.notes.trim() !== "") {
+                html +=
+                    '<div class="tt-note">“'
+                    + escapeHTML(lap.notes.trim())
+                    + "”</div>";
+            }
+
+            placeTooltip(container, tip, html, p, x, y);
+        };
+
+    bindChartHover(container, move, hide);
+}
+
+
+function attachHistogramHover(container, ctx) {
+
+    const tip = container.querySelector(".chart-tooltip");
+    const band = container.querySelector(".hover-band");
+    const svg = container.querySelector("svg");
+
+    const hide =
+        function() {
+            tip.hidden = true;
+            band.setAttribute("visibility", "hidden");
+            svg.classList.remove("has-active");
+            container
+            .querySelectorAll(".bar.active")
+            .forEach(function(bar) { bar.classList.remove("active"); });
+        };
+
+    const move =
+        function(event) {
+
+            const p = chartPoint(container, event, ctx.width);
+
+            const index =
+                ctx.edges.findIndex(
+                    function(edge) {
+                        return p.x >= edge[0] && p.x < edge[1];
+                    }
+                );
+
+            if (index < 0 || p.y < ctx.top - 20 || p.y > ctx.bottom + 12) {
+                hide();
+                return;
+            }
+
+            const edge = ctx.edges[index];
+
+            band.setAttribute("x", edge[0]);
+            band.setAttribute("width", edge[1] - edge[0]);
+            band.setAttribute("visibility", "visible");
+
+            container
+            .querySelectorAll(".bar")
+            .forEach(
+                function(bar) {
+                    bar.classList.toggle(
+                        "active",
+                        Number(bar.getAttribute("data-bin")) === index
+                    );
+                }
+            );
+
+            svg.classList.add("has-active");
+
+            const xs = ctx.bins.xScale;
+            const start = xs.min + index * xs.step;
+            const end = xs.min + (index + 1) * xs.step;
+            const members = ctx.bins.members[index];
+            const count = members.length;
+            const n = ctx.stats.n;
+
+            let atOrBelow = 0;
+
+            for (let i = 0; i <= index; i++) {
+                atOrBelow += ctx.bins.counts[i];
+            }
+
+            let html =
+                '<div class="tt-title">'
+                + tickLabel(start, xs.step) + "–" + tickLabel(end, xs.step) + " s"
+                + "</div>"
+                + tooltipRow("Laps", count + " (" + fmt((count / n) * 100, 1) + "%)")
+                + tooltipRow("Under " + tickLabel(end, xs.step) + " s", fmt((atOrBelow / n) * 100, 1) + "% of laps");
+
+            if (ctx.stats.mean >= start && ctx.stats.mean < end) {
+                html += tooltipRow("Includes mean", fmt(ctx.stats.mean) + " s");
+            }
+
+            if (count > 0) {
+
+                const numbers =
+                    members.map(function(lap) { return lap.lapNumber; });
+
+                html +=
+                    '<div class="tt-note">Lap'
+                    + (count === 1 ? " " : "s ")
+                    + numbers.slice(0, 15).join(", ")
+                    + (count > 15 ? ", +" + (count - 15) + " more" : "")
+                    + "</div>";
+            }
+
+            const barTop =
+                count > 0
+                ? Number(container.querySelector('.bar[data-bin="' + index + '"]').getAttribute("y"))
+                : ctx.bottom;
+
+            placeTooltip(container, tip, html, p, (edge[0] + edge[1]) / 2, barTop);
+        };
+
+    bindChartHover(container, move, hide);
 }
 
 
