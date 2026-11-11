@@ -92,6 +92,62 @@ h1 {
 
 
 /* =====================================================
+   APP HEADER (logo + name, top left)
+===================================================== */
+
+.app-header {
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    margin-bottom:22px;
+
+    text-align:left;
+}
+
+/*
+    The logo sits on a white tile so its colors
+    read correctly in both dark and light themes.
+*/
+
+.brand-logo-wrap {
+    display:inline-flex;
+
+    align-items:center;
+
+    flex:none;
+
+    height:44px;
+
+    padding:6px 10px;
+
+    background:#ffffff;
+
+    border-radius:8px;
+}
+
+.brand-logo {
+    display:block;
+
+    height:100%;
+    width:auto;
+    max-width:180px;
+
+    object-fit:contain;
+}
+
+.app-header .app-title {
+    margin:0;
+
+    font-size:26px;
+
+    letter-spacing:.2px;
+}
+
+
+/* =====================================================
    TABS
 ===================================================== */
 
@@ -1490,6 +1546,26 @@ tr.excluded-row .lap-time-input {
         padding:14px;
     }
 
+    .app-header {
+        gap:10px;
+
+        margin-bottom:18px;
+    }
+
+    .brand-logo-wrap {
+        height:36px;
+
+        padding:5px 8px;
+    }
+
+    .brand-logo {
+        max-width:130px;
+    }
+
+    .app-header .app-title {
+        font-size:22px;
+    }
+
     button {
         padding:
             10px 13px;
@@ -1504,7 +1580,28 @@ tr.excluded-row .lap-time-input {
 
 <div class="container">
 
-<h1>Time Study</h1>
+<header class="app-header">
+
+    <span
+        id="brandLogoWrap"
+        class="brand-logo-wrap"
+        hidden
+    >
+        <img
+            id="brandLogo"
+            class="brand-logo"
+            src="flexngate-logo.png"
+            alt="Flex-N-Gate"
+            onload="this.parentNode.hidden = false"
+            onerror="this.parentNode.hidden = true"
+        >
+    </span>
+
+    <h1 class="app-title">
+        Time Study
+    </h1>
+
+</header>
 
 
 <!-- ==================================================
